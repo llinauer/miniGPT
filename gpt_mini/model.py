@@ -35,22 +35,21 @@ class LayerNorm(nn.Module):
         self.beta = nn.Parameter(torch.ones(d_model))
         self.epsilon = epsilon
 
-    def forward(self, x):
+    def forward(self, inputs):
         """ Normalize the input over all neurons in the layer. Then apply scaling with gamma and translate
             with beta.
 
-        :param x: torch.tensor(batch_size, position, model_size), layer inputs
-        :return: torch.tensor(batch_size, position, model_size), layer normalization of x
+        :param inputs: torch.tensor(batch_size, position, model_size), layer inputs
+        :return: torch.tensor(batch_size, position, model_size), layer normalization of inputs
         """
 
         # calculate the mean and variance over all neurons in the layer ( = model_size dimension)
-        mean = einops.reduce(x, 'batch position model_size -> batch position 1', 'mean')
-        var = einops.reduce(torch.pow(x - mean, 2), 'batch position model_size -> batch position 1', 'mean')
+        mean = einops.reduce(inputs, 'batch position model_size -> batch position 1', 'mean')
+        var = einops.reduce(torch.pow(inputs - mean, 2), 'batch position model_size -> batch position 1', 'mean')
 
         # subtract the mean, divide by sqrt(var) and transform
-        x = (x - mean) / torch.sqrt(var + self.epsilon)
-        x = (x * self.gamma) + self.beta
-        return x
+        normalized_inputs = (inputs - mean) / torch.sqrt(var + self.epsilon)
+        return (normalized_inputs * self.gamma) + self.beta
 
 
 class Embedding(nn.Module):
