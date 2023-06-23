@@ -10,9 +10,44 @@ import torch.nn as nn
 import einops
 
 
-class MiniGPT(nn.model):
+class MiniGPT(nn.Module):
     """ GPT-style transformer model """
 
     def __init__(self):
         pass
 
+
+class LayerNorm(nn.Module):
+    """ LayerNorm:
+        Normalize inputs to a layer over all the neurons of that layer, then
+        do an affine transformation with learnable parameters gamma and beta"""
+
+    def __init__(self, d_model, epsilon=1e-5):
+        """ Initialize the LayerNorm layer. Create the affine transformation parameters
+            gamma (scaling) and beta (translation).
+
+        :param d_model: int, size of the transformer model
+        :param epsilon: float, added to the denominator in the normalization for numerical stability
+        """
+
+        super(LayerNorm, self).__init__()
+        self.gamma = nn.Parameter(torch.ones(d_model))
+        self.beta = nn.Parameter(torch.ones(d_model))
+        self.epsilon = epsilon
+
+    def forward(self, x):
+        """ Normalize the input over all neurons in the layer. Then apply scaling with gamma and translate
+            with beta.
+
+        :param x: torch.tensor(batch_size, position, model_size), layer inputs
+        :return: torch.tensor(batch_size, position, model_size), layer normalization of x
+        """
+
+        # calculate the mean and variance over all neurons in the layer ( = model_size dimension)
+        mean = einops.reduce(x, 'batch position model_size -> batch position 1', 'mean')
+        var = einops.reduce(torch.pow(x - mean, 2), 'batch position model_size -> batch position 1', 'mean')
+
+        # subtract the mean, divide by sqrt(var) and transform
+        x = (x - mean) / torch.sqrt(var + self.epsilon)
+        x = (x * self.gamma) + self.beta
+        return x
