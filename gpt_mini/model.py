@@ -51,3 +51,30 @@ class LayerNorm(nn.Module):
         x = (x - mean) / torch.sqrt(var + self.epsilon)
         x = (x * self.gamma) + self.beta
         return x
+
+
+class Embedding(nn.Module):
+    """ Embedding:
+        Translate the input tokens to the embedding space
+    """
+
+    def __init__(self, d_model, d_vocab):
+        """ Initialize the Embedding layer with the embedding matrix
+
+        :param d_model: int, size of the transformer model
+        :param d_vocab: int, size of the vocabulary
+        """
+
+        self.W_E = nn.Parameter(torch.empty((d_vocab, d_model)))
+        nn.init.normal_(self.W_E, std=0.02)
+
+    def forward(self, tokens):
+        """ Embed the input tokens. The input tokens are integers; we want to select for each token
+            the row of the W_E matrix with that index.
+
+        :param tokens: torch.tensor(batch, position d_vocab), input token tensor
+        :return: torch.tensor(batch, position d_model), embedding tensor
+        """
+
+        embeddings = self.W_E[tokens]
+        return embeddings
