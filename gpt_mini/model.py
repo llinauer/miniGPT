@@ -84,14 +84,14 @@ class PositionalEmbedding(nn.Module):
     """ Positional Embedding:
     """
 
-    def __init__(self, context_length, model_size, init_range=0.02):
+    def __init__(self, context_length, model_size, init_std=0.02):
         """ Initialize the positional embedding layer with the W_pos matrix
 
         :param context_length: int, context length of the transformer
         :param model_size: int, size of the transformer model
-        :param init_range: float, standard deviation for initializing the weights
+        :param init_std: float, standard deviation for initializing the weights
         """
         super().__init__()
         self.W_pos = nn.Parameter(torch.empty((context_length, model_size)))
-        nn.init.normal_(self.W_pos, std=init_range)
+        nn.init.normal_(self.W_pos, std=init_std)
 
