@@ -57,15 +57,16 @@ class Embedding(nn.Module):
         Translate the input tokens to the embedding space
     """
 
-    def __init__(self, d_model, d_vocab):
+    def __init__(self, d_model, d_vocab, init_std):
         """ Initialize the Embedding layer with the embedding matrix
 
         :param d_model: int, size of the transformer model
         :param d_vocab: int, size of the vocabulary
+        :param init_std: float, standard deviation for initializing the weights
         """
 
         self.W_E = nn.Parameter(torch.empty((d_vocab, d_model)))
-        nn.init.normal_(self.W_E, std=0.02)
+        nn.init.normal_(self.W_E, std=init_std)
 
     def forward(self, tokens):
         """ Embed the input tokens. The input tokens are integers; we want to select for each token
