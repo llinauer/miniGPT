@@ -95,3 +95,20 @@ class PositionalEmbedding(nn.Module):
         self.W_pos = nn.Parameter(torch.empty((context_length, model_size)))
         nn.init.normal_(self.W_pos, std=init_std)
 
+    def forward(self, tokens):
+        """ Take the first n rows from W_pos (where n = number of tokens in sequence) for every sequence in a
+            batch and return it.
+            The i-th row in W_pos corresponds to the positional embedding of the i-th token in the sequence
+
+        :param tokens: torch.tensor(batch, position, d_model), input tokens
+        :return: torch.tensor(batch, position, d_model), positional embeddings
+        """
+
+        # the positional embeddings should have the same shape as the embeddings, since we are going
+        # to add them together -> create a tensor of the same shape
+
+        # take the first n rows from W_pos, where n is the number of tokens in the sequence
+        pos_embed = self.W_pos[:tokens.size(1)] # shape = (position, d_model)
+        # repeat for every batch -> create a tensor of shape (batch, position, d_model)
+        pos_embed = einops.repeat(pos_embed, 'position d_model -> batch position d_model', batch=tokens.size(0))
+        return pos_embed
