@@ -112,3 +112,35 @@ class PositionalEmbedding(nn.Module):
         # repeat for every batch -> create a tensor of shape (batch, position, d_model)
         pos_embed = einops.repeat(pos_embed, 'position d_model -> batch position d_model', batch=tokens.size(0))
         return pos_embed
+
+
+class Attention(nn.Module):
+    """ Attention layer """
+
+    def __init__(self, d_model, n_heads, d_head, init_std=0.02):
+        """ Initialize an attention layer with n_heads attention heads, each with dimension d_head
+
+        :param d_model: int, size of the transformer model
+        :param n_heads: int, number of attention heads in the layer
+        :param d_head: int, dimension of each attention head
+        :param init_std: float, standard deviation for initializing the weights (default = 0.02)
+        """
+
+        # create Q,K & V weights and initialize them
+        self.W_Q = nn.Parameter(torch.empty(n_heads, d_model, d_head))
+        nn.init.normal_(self.W_Q, std=init_std)
+        self.W_K = nn.Parameter(torch.empty(n_heads, d_model, d_head))
+        nn.init.normal_(self.W_K, std=init_std)
+        self.W_V = nn.Parameter(torch.empty(n_heads, d_model, d_head))
+        nn.init.normal_(self.W_V, std=init_std)
+
+        # create Q, K & V biases
+        self.b_Q = nn.Parameter(torch.zero_(n_heads, d_head))
+        self.b_K = nn.Parameter(torch.zero_(n_heads, d_head))
+        self.b_V = nn.Parameter(torch.zero_(n_heads, d_head))
+
+        # W_O transforms back from d_head to d_model
+        self.W_O = nn.Parameter(torch.empty(n_heads, d_head, d_model))
+        nn.init.normal_(self.W_O, std=init_std)
+        self.b_O = nn.Parameter(torch.zero_(n_heads, d_model))
+
