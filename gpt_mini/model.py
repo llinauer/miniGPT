@@ -5,6 +5,7 @@ Definition of the transformer model
 
 """
 
+import math
 import torch
 import torch.nn as nn
 import einops
@@ -143,4 +144,89 @@ class Attention(nn.Module):
         self.W_O = nn.Parameter(torch.empty(n_heads, d_head, d_model))
         nn.init.normal_(self.W_O, std=init_std)
         self.b_O = nn.Parameter(torch.zero_(n_heads, d_model))
+
+        # add IGNORE buffer and set it to a small, non-zero number for masking
+        self.register_buffer("IGNORE", torch.tensor(-1e5, dtype=torch.float32, device="cuda"))
+
+    def apply_causal_mask(self, attention):
+        """ Mask out non-causal pairs of source/target tokens in the attention.
+            A non-causal token pair is one, where the target token has a position > than the source token
+
+        :param attention: torch.tensor(batch, n_heads, query_position, key_position), attention pattern
+        :return: torch.tensor(batch, n_heads, query_position, key_position), lower-triangular form of the attention
+                                                                             pattern
+        """
+
+        mask = torch.triu(torch.ones(attention.size(-2), attention.size(-1), device=attention.device),
+                          diagonal=1).bool()
+        attention.masked_fill_(mask, self.IGNORE)
+        return attention
+
+    def forward(self, inputs):
+        """ Each attention head calculates the so-called scaled dot-product attention:
+                Attention(Q, K, V) = softmax(QK^T / sqrt(d_head)) * V
+            (see: https://arxiv.org/pdf/1706.03762.pdf)
+
+        In words, this means that for each head in the attention layer, we do the following:
+            -) Transform the inputs to queries, keys and values with W_Q, W_K and W_V
+            -) Multiply every pair of queries and keys and softmax the result -> attention pattern
+            -) Multiply the attention pattern with the W_V matrix
+            -) Transform from d_head dimensions back to d_model dimensions with W_O
+
+        In the end, the outputs of all heads are added together
+
+        :param inputs: torch.tensor(batch_size, position, d_model), layer inputs
+        :return: torch.tensor(batch, position, d_model), sum of scaled dot-product attentions of all heads
+        """
+
+        # transform inputs to queries and keys, do this for every head at the same time
+        queries = einops.einsum(inputs, self.W_Q, 'batch position d_model, n_heads d_model d_head -> '
+                                                  'batch position n_heads d_head')
+        queries += self.b_Q
+
+        keys = einops.einsum(inputs, self.W_K, 'batch position d_model, n_heads d_model d_head -> '
+                                               'batch position n_heads d_head')
+        keys += self.b_K
+
+        # multiply queries with keys pairwise, this creates an attention patten for each pair of tokens
+        # the queries correspond to the source tokens, the keys to the target tokens
+        attention = einops.einsum(queries, keys, 'batch query_position n_heads d_head, '
+                                                 'batch key_position n_heads, d_head '
+                                                 '-> batch n_heads query_position key_position')
+
+        # scale the attention by dividing it by sqrt(d_head)
+        attention /= math.sqrt(self.b_Q.shape[1])
+
+        # attention is now of shape (batch n_heads, query_position, key_position) (the query_position and
+        # key_position dimensions are the same), this means, for each head in every element of the batch, we have
+        # a query_position x key_position matrix
+        # Each element of this matrix corresponds to the pairwise attention between two tokens, one source and one
+        # target token. However, we want the attention to only be calculated between a target token, that is
+        # at most in the same position as the source token. Otherwise the model would "look into the future"
+        # -> make the attention matrix lower-triangular
+        attention = self.apply_causal_mask(attention)
+
+        # finally, apply softmax along the query_position dimension to get one probability distribution per
+        # source token, over all target tokens
+        attention = attention.softmax(dim=-1)
+
+        # transform inputs to values
+        values = einops.einsum(inputs, self.W_V, 'batch position d_model, n_heads d_model d_head -> '
+                                                 'batch position n_heads d_head')
+        values += self.b_V
+
+        # multiply attention with values
+        # attention is of shape (batch, n_heads, query_position, key_position)
+        # values is of shape (batch, position, n_heads, d_head)
+        out = einops.einsum(attention, values, 'batch n_heads query_position key_position, '
+                                               'batch key_position n_heads d_head '
+                                               '-> batch query_position n_heads d_head')
+
+        # transform to d_model dimension and sum over all heads
+        out += einops.einsum(out, self.W_O, 'batch position n_heads d_head, n_heads d_head d_model '
+                                            '-> batch position d_model')
+        out += self.b_O
+
+        return out
+
 
