@@ -250,3 +250,13 @@ class MLP(nn.Module):
         self.b_out = nn.Parameter(torch.zeros(d_model))
 
 
+    def forward(self, inputs):
+        """ 
+        :param inputs: torch.tensor(batch_size, position, d_model), layer inputs
+        :return: torch.tensor(batch, position, d_model), output of MLP layer
+        """
+
+        # process hidden layer
+        out = einops.einsum(inputs, self.W_hidden, 'batch position d_model, d_model d_hidden 
+                                                    -> batch position d_hidden')
+        out += self.b_hidden
