@@ -126,6 +126,7 @@ class Attention(nn.Module):
         :param d_head: int, dimension of each attention head
         :param init_std: float, standard deviation for initializing the weights (default = 0.02)
         """
+        super().__init__()
 
         # create Q,K & V weights and initialize them
         self.W_Q = nn.Parameter(torch.empty(n_heads, d_model, d_head))
