@@ -248,7 +248,9 @@ class MLP(nn.Module):
         self.W_out = nn.Parameter(torch.empty(4*d_model, d_model))
         torch.nn.init.normal_(self.W_out, std=init_std)
         self.b_out = nn.Parameter(torch.zeros(d_model))
-
+    
+        # activation
+        self.activation = nn.GELU()
 
     def forward(self, inputs):
         """ 
