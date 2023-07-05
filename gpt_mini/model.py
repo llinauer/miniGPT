@@ -231,3 +231,22 @@ class Attention(nn.Module):
         return out
 
 
+class MLP(nn.Module):
+    """ MLP layer """
+
+    def __init__(self, d_model, init_std=0.02):
+        """ Initialize an MLP layer with one hidden layer with 4*d_model neuros
+        :param d_model: int, size of the transformer model
+        :param init_std: float, standard deviation for initializing the weights (default = 0.02)
+        """
+
+        # create weights and biases for hidden and output layer
+        self.W_hidden = nn.Parameter(torch.empty(d_model, 4*d_model))
+        torch.nn.init.normal_(self.W_hidden, std=init_std)
+        self.b_in = nn.Parameter(torch.zeros(4*d_model))
+
+        self.W_out = nn.Parameter(torch.empty(4*d_model, d_model))
+        torch.nn.init.normal_(self.W_out, std=init_std)
+        self.b_out = nn.Parameter(torch.zeros(d_model))
+
+
