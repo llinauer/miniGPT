@@ -305,3 +305,25 @@ class Unembed(nn.Module):
         out += self.b_U
 
         return out
+
+
+class TransformerBlock(nn.Module):
+    """ TransformerBlock = Attention + MLP """
+
+    def __init__(self, d_model, n_heads, d_head, init_std=0.2, epsilon=1e-5):
+        """ Initialize an Attention layer, a MLP layer and two 
+            LayerNorms
+
+        :param d_model: int, size of the transformer model
+        :param n_heads: int, number of attention heads in the layer
+        :param d_head: int, dimension of each attention head
+        :param init_std: float, standard deviation for initializing the weights (default = 0.02)
+        :param epsilon: float, added to the denominator in the normalization for numerical stability
+                        (default = 1e-5)
+        """
+
+        super().__init__()
+        self.attention_ln = LayerNorm(d_model, epsilon)
+        self.attention_layer = Attention(d_model, n_heads, d_head, init_std)
+        self.mlp_ln = LayerNorm(d_model, epsilon)
+        self.mlp = MLP(d_model, init_std)
