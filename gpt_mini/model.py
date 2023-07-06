@@ -295,7 +295,8 @@ class Unembed(nn.Module):
 
 
     def forward(self, inputs):
-        """
+        """ Transform output of last MLP layer to logits of size d_vocab 
+        
         :param inputs: torch.tensor(batch_size, position, d_model), layer inputs
         :return: torch.tensor(batch, position, d_vocab), output logits
         """
