@@ -29,6 +29,7 @@ class LayerNorm(nn.Module):
 
         :param d_model: int, size of the transformer model
         :param epsilon: float, added to the denominator in the normalization for numerical stability
+                        (default = 1e-5)
         """
 
         super(LayerNorm, self).__init__()
@@ -278,7 +279,7 @@ class MLP(nn.Module):
 class Unembed(nn.Module):
     """ Unenbedding, transform to logits """
 
-    def __init__(self, d_model, d_vocab, init_std):
+    def __init__(self, d_model, d_vocab, init_std=0.02):
         """ Initialize the unembedding layer with W_U and b_U
 
         :param d_model: int, size of the transformer model
