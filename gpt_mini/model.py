@@ -292,3 +292,16 @@ class Unembed(nn.Module):
         torch.nn.init.normal_(self.W_U, std=init_std)
         self.b_U = nn.Parameter(torch.zeros(d_vocab))
 
+
+    def forward(self, inputs):
+        """
+        :param inputs: torch.tensor(batch_size, position, d_model), layer inputs
+        :return: torch.tensor(batch, position, d_vocab), output logits
+        """
+
+        # transform from the model dimension back to the vocab dimension
+        out = einops.einsum(inputs, self.W_U, 'batch position d_model, d_model d_vocab 
+                                               -> batch position d_vocab')
+        out += self.b_U
+
+        return out
