@@ -271,3 +271,22 @@ class MLP(nn.Module):
         out += self.b_out
 
         return out
+
+
+class Unembed(nn.Module):
+    """ Unenbedding, transform to logits """
+
+    def __init__(self, d_model, d_vocab, init_std):
+        """ Initialize the unembedding layer with W_U and b_U
+
+        :param d_model: int, size of the transformer model
+        :param d_vocab: int, size of the vocabulary
+        :param init_std: float, standard deviation for initializing the weights
+        """
+
+        super().__init__()
+
+        self.W_U = nn.Parameter(torch.empty(d_model, d_vocab))
+        torch.nn.init.normal_(self.W_U, std=init_std)
+        self.b_U = nn.Parameter(torch.zeros(d_vocab))
+
