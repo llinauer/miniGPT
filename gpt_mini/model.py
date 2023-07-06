@@ -239,6 +239,8 @@ class MLP(nn.Module):
         :param d_model: int, size of the transformer model
         :param init_std: float, standard deviation for initializing the weights (default = 0.02)
         """
+        
+        super().__init__()
 
         # create weights and biases for hidden and output layer
         self.W_hidden = nn.Parameter(torch.empty(d_model, 4*d_model))
