@@ -345,3 +345,31 @@ class TransformerBlock(nn.Module):
 
         return mlp_out
 
+
+class Transformer(nn.Module):
+    """ Full Transformer model """
+
+    def __init__(self, n_layers, d_vocab, context_length, d_model, n_heads, d_head,
+                 epsilon=1e-5, init_std=0.02):
+        """ Initialize all transformer layers
+
+        :param n_layer: int, number of Transformer layers
+        :param d_vocab: int, size of the vocabulary
+        :param context_length: int, context length of the transformer
+        :param d_model: int, size of the transformer model
+        :param n_heads: int, number of attention heads in the layer
+        :param d_head: int, dimension of each attention head
+        :param epsilon: float, added to the denominator in the normalization
+                               for numerical stability (default = 1e-5)
+        :param init_std: float, standard deviation for initializing the weights
+                                (default = 0.02)
+        """
+
+        super().__init__()
+        self.embed = Embedding(d_model, d_vocab, init_std)
+        self.pos_embed = PositionalEmbedding(context_length, d_model, init_std)
+        self.trans_blocks = nn.ModuleList(
+                [TransformerBlock(d_model, n_heads, d_head, init_std, epsilon)
+                 for _ in range(n_layers)])
+        self.ln_final = LayerNorm(d_model, epsilon)
+        self.unembed = Unenbed(d_model, d_vocab)
