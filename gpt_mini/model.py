@@ -276,7 +276,7 @@ class MLP(nn.Module):
         return out
 
 
-class Unembed(nn.Module):
+class Unembedding(nn.Module):
     """ Unenbedding, transform to logits """
 
     def __init__(self, d_model, d_vocab, init_std=0.02):
@@ -372,4 +372,4 @@ class Transformer(nn.Module):
                 [TransformerBlock(d_model, n_heads, d_head, init_std, epsilon)
                  for _ in range(n_layers)])
         self.ln_final = LayerNorm(d_model, epsilon)
-        self.unembed = Unenbed(d_model, d_vocab)
+        self.unembed = Unenbeddin(d_model, d_vocab)
