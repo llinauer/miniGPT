@@ -255,15 +255,15 @@ class MLP(nn.Module):
         """
 
         # process hidden layer
-        out = einops.einsum(inputs, self.W_hidden, 'batch position d_model, d_model d_hidden 
-                                                    -> batch position d_hidden')
+        out = einops.einsum(inputs, self.W_hidden, 'batch position d_model, d_model d_hidden ' 
+                                                   '-> batch position d_hidden')
         out += self.b_hidden
         # activation
         out = self.activation(out)
 
         # process output layer
-        out = einops.einsum(out, self.W_out, 'batch position d_hidden, d_hidden d_model 
-                                              -> batch position d_model')
+        out = einops.einsum(out, self.W_out, 'batch position d_hidden, d_hidden d_model '
+                                             '-> batch position d_model')
         out += self.b_out
 
         return out
@@ -295,8 +295,8 @@ class Unembedding(nn.Module):
         """
 
         # transform from the model dimension back to the vocab dimension
-        out = einops.einsum(inputs, self.W_U, 'batch position d_model, d_model d_vocab 
-                                               -> batch position d_vocab')
+        out = einops.einsum(inputs, self.W_U, 'batch position d_model, d_model d_vocab '
+                                              '-> batch position d_vocab')
         out += self.b_U
 
         return out
