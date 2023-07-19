@@ -21,8 +21,8 @@ class LayerNorm(nn.Module):
             gamma (scaling) and beta (translation).
 
         :param d_model: int, size of the transformer model
-        :param epsilon: float, added to the denominator in the normalization for numerical stability
-                        (default = 1e-5)
+        :param epsilon: float, added to the denominator in the normalization for numerical
+                        stability (default = 1e-5)
         """
 
         super(LayerNorm, self).__init__()
@@ -31,8 +31,8 @@ class LayerNorm(nn.Module):
         self.epsilon = epsilon
 
     def forward(self, inputs):
-        """ Normalize the input over all neurons in the layer. Then apply scaling with gamma and translate
-            with beta.
+        """ Normalize the input over all neurons in the layer. Then apply scaling with gamma and
+            translate with beta.
 
         :param inputs: torch.tensor(batch_size, position, d_model), layer inputs
         :return: torch.tensor(batch_size, position, d_model), layer normalization of inputs
@@ -40,7 +40,8 @@ class LayerNorm(nn.Module):
 
         # calculate the mean and variance over all neurons in the layer ( = d_model dimension)
         mean = einops.reduce(inputs, 'batch position d_model -> batch position 1', 'mean')
-        var = einops.reduce(torch.pow(inputs - mean, 2), 'batch position d_model -> batch position 1', 'mean')
+        var = einops.reduce(torch.pow(inputs - mean, 2),
+                            'batch position d_model -> batch position 1', 'mean')
 
         # subtract the mean, divide by sqrt(var) and transform
         normalized_inputs = (inputs - mean) / torch.sqrt(var + self.epsilon)
@@ -91,21 +92,23 @@ class PositionalEmbedding(nn.Module):
         nn.init.normal_(self.W_pos, std=init_std)
 
     def forward(self, tokens):
-        """ Take the first n rows from W_pos (where n = number of tokens in sequence) for every sequence in a
-            batch and return it.
-            The i-th row in W_pos corresponds to the positional embedding of the i-th token in the sequence
+        """ Take the first n rows from W_pos (where n = number of tokens in sequence) for every
+            sequence in a batch and return it.
+            The i-th row in W_pos corresponds to the positional embedding of the i-th token in the
+            sequence
 
         :param tokens: torch.tensor(batch, position, d_model), input tokens
         :return: torch.tensor(batch, position, d_model), positional embeddings
         """
 
-        # the positional embeddings should have the same shape as the embeddings, since we are going
-        # to add them together -> create a tensor of the same shape
+        # the positional embeddings should have the same shape as the embeddings, since we are
+        # going to add them together -> create a tensor of the same shape
 
         # take the first n rows from W_pos, where n is the number of tokens in the sequence
         pos_embed = self.W_pos[:tokens.size(1)] # shape = (position, d_model)
         # repeat for every batch -> create a tensor of shape (batch, position, d_model)
-        pos_embed = einops.repeat(pos_embed, 'position d_model -> batch position d_model', batch=tokens.size(0))
+        pos_embed = einops.repeat(pos_embed, 'position d_model -> batch position d_model',
+                                  batch=tokens.size(0))
         return pos_embed
 
 
@@ -145,15 +148,19 @@ class Attention(nn.Module):
 
     def apply_causal_mask(self, attention):
         """ Mask out non-causal pairs of source/target tokens in the attention.
-            A non-causal token pair is one, where the target token has a position > than the source token
+            A non-causal token pair is one, where the target token has a position > than the
+            source token
 
-        :param attention: torch.tensor(batch, n_heads, query_position, key_position), attention pattern
-        :return: torch.tensor(batch, n_heads, query_position, key_position), lower-triangular form of the attention
+        :param attention: torch.tensor(batch, n_heads, query_position, key_position), attention
+                                                                                      pattern
+        :return: torch.tensor(batch, n_heads, query_position, key_position), lower-triangular form
+                                                                             of the attention
                                                                              pattern
         """
 
-        mask = torch.triu(torch.ones(attention.size(-2), attention.size(-1), device=attention.device),
-                          diagonal=1).bool()
+        mask = torch.triu(
+            torch.ones(attention.size(-2), attention.size(-1), device=attention.device),
+            diagonal=1).bool()
         attention.masked_fill_(mask, self.IGNORE)
         return attention
 
@@ -171,20 +178,21 @@ class Attention(nn.Module):
         In the end, the outputs of all heads are added together
 
         :param inputs: torch.tensor(batch_size, position, d_model), layer inputs
-        :return: torch.tensor(batch, position, d_model), sum of scaled dot-product attentions of all heads
+        :return: torch.tensor(batch, position, d_model), sum of scaled dot-product attentions of
+                                                         all heads
         """
 
         # transform inputs to queries and keys, do this for every head at the same time
-        queries = einops.einsum(inputs, self.W_Q, 'batch position d_model, n_heads d_model d_head -> '
-                                                  'batch position n_heads d_head')
+        queries = einops.einsum(inputs, self.W_Q, 'batch position d_model, n_heads d_model d_head '
+                                                  '-> batch position n_heads d_head')
         queries += self.b_Q
 
         keys = einops.einsum(inputs, self.W_K, 'batch position d_model, n_heads d_model d_head -> '
                                                'batch position n_heads d_head')
         keys += self.b_K
 
-        # multiply queries with keys pairwise, this creates an attention patten for each pair of tokens
-        # the queries correspond to the source tokens, the keys to the target tokens
+        # multiply queries with keys pairwise, this creates an attention patten for each pair of
+        # tokens, the queries correspond to the source tokens, the keys to the target tokens
         attention = einops.einsum(queries, keys, 'batch query_position n_heads d_head, '
                                                  'batch key_position n_heads, d_head '
                                                  '-> batch n_heads query_position key_position')
@@ -192,22 +200,23 @@ class Attention(nn.Module):
         # scale the attention by dividing it by sqrt(d_head)
         attention /= math.sqrt(self.b_Q.shape[1])
 
-        # attention is now of shape (batch n_heads, query_position, key_position) (the query_position and
-        # key_position dimensions are the same), this means, for each head in every element of the batch, we have
-        # a query_position x key_position matrix
-        # Each element of this matrix corresponds to the pairwise attention between two tokens, one source and one
-        # target token. However, we want the attention to only be calculated between a target token, that is
-        # at most in the same position as the source token. Otherwise the model would "look into the future"
+        # attention is now of shape (batch n_heads, query_position, key_position)
+        # (the query_position and key_position dimensions are the same), this means, for each head
+        # in every element of the batch, we have a query_position x key_position matrix
+        # Each element of this matrix corresponds to the pairwise attention between two tokens,
+        # one source and one target token. However, we want the attention to only be calculated 
+        # between a target token, that is at most in the same position as the source token.
+        # Otherwise the model would "look into the future"
         # -> make the attention matrix lower-triangular
         attention = self.apply_causal_mask(attention)
 
-        # finally, apply softmax along the query_position dimension to get one probability distribution per
-        # source token, over all target tokens
+        # finally, apply softmax along the query_position dimension to get one probability
+        # distribution per source token, over all target tokens
         attention = attention.softmax(dim=-1)
 
         # transform inputs to values
-        values = einops.einsum(inputs, self.W_V, 'batch position d_model, n_heads d_model d_head -> '
-                                                 'batch position n_heads d_head')
+        values = einops.einsum(inputs, self.W_V, 'batch position d_model, n_heads d_model d_head '
+                                                 '-> batch position n_heads d_head')
         values += self.b_V
 
         # multiply attention with values
@@ -218,8 +227,8 @@ class Attention(nn.Module):
                                                '-> batch query_position n_heads d_head')
 
         # transform to d_model dimension and sum over all heads
-        out += einops.einsum(out, self.W_O, 'batch position n_heads d_head, n_heads d_head d_model '
-                                            '-> batch position d_model')
+        out += einops.einsum(out, self.W_O, 'batch position n_heads d_head, n_heads d_head d_model'
+                                            ' -> batch position d_model')
         out += self.b_O
 
         return out
@@ -313,8 +322,8 @@ class TransformerBlock(nn.Module):
         :param n_heads: int, number of attention heads in the layer
         :param d_head: int, dimension of each attention head
         :param init_std: float, standard deviation for initializing the weights (default = 0.02)
-        :param epsilon: float, added to the denominator in the normalization for numerical stability
-                        (default = 1e-5)
+        :param epsilon: float, added to the denominator in the normalization for numerical 
+                               stability (default = 1e-5)
         """
 
         super().__init__()
