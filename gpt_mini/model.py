@@ -11,13 +11,6 @@ import torch.nn as nn
 import einops
 
 
-class MiniGPT(nn.Module):
-    """ GPT-style transformer model """
-
-    def __init__(self):
-        pass
-
-
 class LayerNorm(nn.Module):
     """ LayerNorm:
         Normalize inputs to a layer over all the neurons of that layer, then
@@ -346,8 +339,8 @@ class TransformerBlock(nn.Module):
         return mlp_out
 
 
-class Transformer(nn.Module):
-    """ Full Transformer model """
+class MiniGPT(nn.Module):
+    """ GPT-style transformer model """
 
     def __init__(self, n_layers, d_vocab, context_length, d_model, n_heads, d_head,
                  epsilon=1e-5, init_std=0.02):
