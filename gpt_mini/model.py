@@ -375,3 +375,25 @@ class MiniGPT(nn.Module):
                  for _ in range(n_layers)])
         self.ln_final = LayerNorm(d_model, epsilon)
         self.unembed = Unembedding(d_model, d_vocab)
+
+
+    def forward(self, tokens):
+        """ Feed the tokens through the whole Transformer
+
+        :param tokens: torch.tensor(batch, position d_vocab), input tokens
+        :return: torch.tensor(batch, position, d_vocab), output logits
+        """
+    
+        # add embeddings and positional embeddings
+        # all layers add their output to an object called the "residual stream"
+        residual = self.embed(tokens) + self.pos_embed(tokens)
+
+        # feed through all transformer blocks
+        for block in self.trans_blocks:
+            residual = block(residual)
+
+        # calculate output logits
+        logits = self.unembed(self.ln_final(residual))
+
+        return logits
+            
