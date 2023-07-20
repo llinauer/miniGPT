@@ -1,0 +1,6 @@
+Required packages:
+------------------
+
+huggingface datasets: pip install datasets
+apache beam: pip install apache_beam
+huggingface transformers: pip install transformers
