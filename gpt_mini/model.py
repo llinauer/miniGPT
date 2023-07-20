@@ -144,7 +144,8 @@ class Attention(nn.Module):
         self.b_O = nn.Parameter(torch.zeros(n_heads, d_model))
 
         # add IGNORE buffer and set it to a small, non-zero number for masking
-        self.register_buffer("IGNORE", torch.tensor(-1e5, dtype=torch.float32, device="cuda"))
+        self.register_buffer("IGNORE", torch.tensor(-1e5, dtype=torch.float32,
+                                                    device=self.W_Q.device))
 
     def apply_causal_mask(self, attention):
         """ Mask out non-causal pairs of source/target tokens in the attention.
@@ -383,7 +384,7 @@ class MiniGPT(nn.Module):
         :param tokens: torch.tensor(batch, position d_vocab), input tokens
         :return: torch.tensor(batch, position, d_vocab), output logits
         """
-    
+
         # add embeddings and positional embeddings
         # all layers add their output to an object called the "residual stream"
         residual = self.embed(tokens) + self.pos_embed(tokens)
@@ -396,4 +397,3 @@ class MiniGPT(nn.Module):
         logits = self.unembed(self.ln_final(residual))
 
         return logits
-            
