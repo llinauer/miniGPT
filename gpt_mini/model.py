@@ -134,14 +134,14 @@ class Attention(nn.Module):
         nn.init.normal_(self.W_V, std=init_std)
 
         # create Q, K & V biases
-        self.b_Q = nn.Parameter(torch.zero_(n_heads, d_head))
-        self.b_K = nn.Parameter(torch.zero_(n_heads, d_head))
-        self.b_V = nn.Parameter(torch.zero_(n_heads, d_head))
+        self.b_Q = nn.Parameter(torch.zeros(n_heads, d_head))
+        self.b_K = nn.Parameter(torch.zeros(n_heads, d_head))
+        self.b_V = nn.Parameter(torch.zeros(n_heads, d_head))
 
         # W_O transforms back from d_head to d_model
         self.W_O = nn.Parameter(torch.empty(n_heads, d_head, d_model))
         nn.init.normal_(self.W_O, std=init_std)
-        self.b_O = nn.Parameter(torch.zero_(n_heads, d_model))
+        self.b_O = nn.Parameter(torch.zeros(n_heads, d_model))
 
         # add IGNORE buffer and set it to a small, non-zero number for masking
         self.register_buffer("IGNORE", torch.tensor(-1e5, dtype=torch.float32, device="cuda"))
