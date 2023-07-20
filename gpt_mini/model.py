@@ -7,7 +7,7 @@ Definition of the transformer model
 
 import math
 import torch
-import torch.nn as nn
+from torch import nn
 import einops
 
 
@@ -25,7 +25,7 @@ class LayerNorm(nn.Module):
                         stability (default = 1e-5)
         """
 
-        super(LayerNorm, self).__init__()
+        super().__init__()
         self.gamma = nn.Parameter(torch.ones(d_model))
         self.beta = nn.Parameter(torch.ones(d_model))
         self.epsilon = epsilon
@@ -60,7 +60,7 @@ class Embedding(nn.Module):
         :param d_vocab: int, size of the vocabulary
         :param init_std: float, standard deviation for initializing the weights
         """
-
+        super().__init__()
         self.W_E = nn.Parameter(torch.empty((d_vocab, d_model)))
         nn.init.normal_(self.W_E, std=init_std)
 
@@ -204,7 +204,7 @@ class Attention(nn.Module):
         # (the query_position and key_position dimensions are the same), this means, for each head
         # in every element of the batch, we have a query_position x key_position matrix
         # Each element of this matrix corresponds to the pairwise attention between two tokens,
-        # one source and one target token. However, we want the attention to only be calculated 
+        # one source and one target token. However, we want the attention to only be calculated
         # between a target token, that is at most in the same position as the source token.
         # Otherwise the model would "look into the future"
         # -> make the attention matrix lower-triangular
@@ -242,7 +242,7 @@ class MLP(nn.Module):
         :param d_model: int, size of the transformer model
         :param init_std: float, standard deviation for initializing the weights (default = 0.02)
         """
-        
+
         super().__init__()
 
         # create weights and biases for hidden and output layer
@@ -253,18 +253,18 @@ class MLP(nn.Module):
         self.W_out = nn.Parameter(torch.empty(4*d_model, d_model))
         torch.nn.init.normal_(self.W_out, std=init_std)
         self.b_out = nn.Parameter(torch.zeros(d_model))
-    
+
         # activation
         self.activation = nn.GELU()
 
     def forward(self, inputs):
-        """ 
+        """
         :param inputs: torch.tensor(batch_size, position, d_model), layer inputs
         :return: torch.tensor(batch, position, d_model), output of MLP layer
         """
 
         # process hidden layer
-        out = einops.einsum(inputs, self.W_hidden, 'batch position d_model, d_model d_hidden ' 
+        out = einops.einsum(inputs, self.W_hidden, 'batch position d_model, d_model d_hidden '
                                                    '-> batch position d_hidden')
         out += self.b_hidden
         # activation
@@ -297,8 +297,8 @@ class Unembedding(nn.Module):
 
 
     def forward(self, inputs):
-        """ Transform output of last MLP layer to logits of size d_vocab 
-        
+        """ Transform output of last MLP layer to logits of size d_vocab
+
         :param inputs: torch.tensor(batch_size, position, d_model), layer inputs
         :return: torch.tensor(batch, position, d_vocab), output logits
         """
@@ -315,14 +315,14 @@ class TransformerBlock(nn.Module):
     """ TransformerBlock = Attention + MLP """
 
     def __init__(self, d_model, n_heads, d_head, init_std=0.2, epsilon=1e-5):
-        """ Initialize an Attention layer, a MLP layer and two 
+        """ Initialize an Attention layer, a MLP layer and two
             LayerNorms
 
         :param d_model: int, size of the transformer model
         :param n_heads: int, number of attention heads in the layer
         :param d_head: int, dimension of each attention head
         :param init_std: float, standard deviation for initializing the weights (default = 0.02)
-        :param epsilon: float, added to the denominator in the normalization for numerical 
+        :param epsilon: float, added to the denominator in the normalization for numerical
                                stability (default = 1e-5)
         """
 
@@ -374,4 +374,4 @@ class MiniGPT(nn.Module):
                 [TransformerBlock(d_model, n_heads, d_head, init_std, epsilon)
                  for _ in range(n_layers)])
         self.ln_final = LayerNorm(d_model, epsilon)
-        self.unembed = Unenbeddin(d_model, d_vocab)
+        self.unembed = Unembedding(d_model, d_vocab)
