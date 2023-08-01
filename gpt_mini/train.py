@@ -76,6 +76,21 @@ class TransformerTrainer:
         return loss
 
 
+    def validation_step(self, batch):
+        """ Do one validation step with the batch
+
+        :param batch: dict, dictionary containing a batch of the tokenized dataset
+        :return: torch.tensor(batch_size, position), boolean tensor, True if prediction is correct
+        """
+
+        tokens = batch['tokens'].to(self.device)
+        logits = self.model(tokens)[:, :-1]
+        predicted_tokens = logits.argmax(dim=-1)
+        correct_predictions = (predicted_tokens == tokens[:, 1:]).flatten()
+
+        return correct_predictions
+
+
 
 def parse_args():
     """ Parse the command-line args
