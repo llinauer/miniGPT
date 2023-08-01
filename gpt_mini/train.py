@@ -186,7 +186,7 @@ def main():
 
     device = torch.device('cuda')
 
-    model = MiniGPT(n_layers, d_vocab, context_length, d_model, n_heads, d_head)
+    model = MiniGPT(n_layers, d_vocab, context_length, d_model, n_heads, d_head).to(device)
     trainer = TransformerTrainer(model, batch_size, epochs, max_steps_per_epoch, learning_rate,
                                  weight_decay, tokenized_dataset, device)
     trainer.train()
