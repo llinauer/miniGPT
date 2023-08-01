@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 import datasets
 import transformers
 from transformer_lens.utils import tokenize_and_concatenate
+from model import MiniGPT
 
 
 def get_log_probs(tokens, logits):
@@ -176,3 +177,18 @@ def main():
     test_loader = DataLoader(dataset_dict["test"], batch_size=batch_size, shuffle=False,
                              num_workers=4, pin_memory=True)
 
+    # training
+    # define model parameters
+    n_layers = 12
+    d_vocab = 50257
+    context_length = 1024
+    d_model = 768
+    n_heads = 12
+    d_head = 64
+
+    device = torch.device('cuda')
+
+    model = MiniGPT(n_layers, d_vocab, context_length, d_model, n_heads, d_head)
+    trainer = TransformerTrainer(model, batch_size, epochs, max_steps_per_epoch, learning_rate,
+                                 weight_decay, device)
+    trainer.train()
