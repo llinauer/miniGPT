@@ -91,6 +91,28 @@ class TransformerTrainer:
         return correct_predictions
 
 
+    def train(self):
+        """ Training loop """
+
+        accuracy = np.nan
+        progress_bar = tqdm(total = self.steps_per_epoch * self.n_epochs)
+
+        for epoch in range(self.n_epochs):
+            for i, batch in enumerate(self.train_loader()):
+                loss = self.training_step(batch)
+                progress_bar.update()
+                progress_bar.set_description(f'Epoch {epoch+1}, loss: {loss:.3f},'
+                                             f'accuracy: {accuracy:.2f}')
+                if i >= self.steps_per_epoch:
+                    break
+
+            # validation
+            correct_preds = torch.concat(
+                [self.validation_step(batch) for batch in self.test_loader()])
+            accuracy = correct_predictions.float().mean().item()
+
+
+
 
 def parse_args():
     """ Parse the command-line args
