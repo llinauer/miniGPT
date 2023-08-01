@@ -12,7 +12,8 @@ import datasets
 import transformers
 from transformer_lens.utils import tokenize_and_concatenate
 from model import MiniGPT
-
+import numpy as np
+import tqdm
 
 def get_log_probs(tokens, logits):
     """ Calculate the log probabilities for each token
@@ -192,3 +193,6 @@ def main():
     trainer = TransformerTrainer(model, batch_size, epochs, max_steps_per_epoch, learning_rate,
                                  weight_decay, device)
     trainer.train()
+
+if __name__ == '__main__':
+    main()
