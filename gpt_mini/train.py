@@ -7,6 +7,7 @@ Train a MiniGPT model
 import argparse
 import torch
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 import datasets
 import transformers
 from transformer_lens.utils import tokenize_and_concatenate
@@ -112,6 +113,23 @@ class TransformerTrainer:
             accuracy = correct_predictions.float().mean().item()
 
 
+    def train_loader(self):
+        """ Return the training dataloader
+        :return: torch.utils.data.DataLoader, training dataloader
+        """
+
+    	return DataLoader(dataset_dict["train"], batch_size=self.bs, shuffle=True,
+                          num_workers=4, pin_memory=True)
+
+    def test_loader(self):
+        """ Return the test dataloader
+        :return: torch.utils.data.DataLoader, test dataloader
+        """
+
+    	return DataLoader(dataset_dict["test"], batch_size=self.bs, shuffle=True,
+                          num_workers=4, pin_memory=True)
+
+
 
 
 def parse_args():
@@ -157,7 +175,4 @@ def main():
                               num_workers=4, pin_memory=True)
     test_loader = DataLoader(dataset_dict["test"], batch_size=batch_size, shuffle=False,
                              num_workers=4, pin_memory=True)
-
-
-
 
