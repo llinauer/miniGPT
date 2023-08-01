@@ -195,7 +195,7 @@ class Attention(nn.Module):
         # multiply queries with keys pairwise, this creates an attention patten for each pair of
         # tokens, the queries correspond to the source tokens, the keys to the target tokens
         attention = einops.einsum(queries, keys, 'batch query_position n_heads d_head, '
-                                                 'batch key_position n_heads, d_head '
+                                                 'batch key_position n_heads d_head '
                                                  '-> batch n_heads query_position key_position')
 
         # scale the attention by dividing it by sqrt(d_head)
@@ -342,7 +342,7 @@ class TransformerBlock(nn.Module):
         """
 
         norm_attention_in = self.attention_ln(inputs)
-        attention_out = self.attention(norm_attention_in)
+        attention_out = self.attention_layer(norm_attention_in)
         norm_mlp_in = self.mlp_ln(attention_out)
         mlp_out = self.mlp(norm_mlp_in)
 
