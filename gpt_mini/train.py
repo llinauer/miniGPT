@@ -119,7 +119,7 @@ class TransformerTrainer:
         :return: torch.utils.data.DataLoader, training dataloader
         """
 
-    	return DataLoader(dataset_dict["train"], batch_size=self.bs, shuffle=True,
+        return DataLoader(dataset_dict["train"], batch_size=self.bs, shuffle=True,
                           num_workers=4, pin_memory=True)
 
     def test_loader(self):
@@ -127,7 +127,7 @@ class TransformerTrainer:
         :return: torch.utils.data.DataLoader, test dataloader
         """
 
-    	return DataLoader(dataset_dict["test"], batch_size=self.bs, shuffle=True,
+        return DataLoader(dataset_dict["test"], batch_size=self.bs, shuffle=True,
                           num_workers=4, pin_memory=True)
 
 
