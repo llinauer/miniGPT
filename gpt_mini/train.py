@@ -37,7 +37,7 @@ def get_log_probs(tokens, logits):
 class TransformerTrainer:
     """ class for training the MiniGPT transformer """
 
-    def __init__(self, model, bs, n_epochs, steps_per_epoch, lr, wd, device='cpu'):
+    def __init__(self, model, bs, n_epochs, steps_per_epoch, lr, wd, dataset, device='cpu'):
         """ Constructor
 
         :param model: nn.Module, transformer model to train
@@ -46,6 +46,7 @@ class TransformerTrainer:
         :param steps_per_epochs: int, number of training steps per epoch
         :param lr: float, learning rate
         :param wd: float, weight decay rate
+        :param dataset: datasets.Dataset, dataset to use
         :param device: str or torch.device obj, device to send tensors to
         """
 
@@ -58,6 +59,9 @@ class TransformerTrainer:
         self.wd = wd
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=lr, weight_decay=wd)
         self.device = device
+        dataset_dict = dataset.train_test_split(test_size=1000)
+        self.train_ds = dataset_dict['train']
+        self.test_ds = dataset_dict['test']
         self.step = 0
 
 
@@ -75,7 +79,7 @@ class TransformerTrainer:
         self.optimizer.step()
         self.optimizer.zero_grad()
         self.step += 1
-        
+
         return loss
 
 
@@ -98,7 +102,7 @@ class TransformerTrainer:
         """ Training loop """
 
         accuracy = np.nan
-        progress_bar = tqdm(total = self.steps_per_epoch * self.n_epochs)
+        progress_bar = tqdm.tqdm(total = self.steps_per_epoch * self.n_epochs)
 
         for epoch in range(self.n_epochs):
             for i, batch in enumerate(self.train_loader()):
@@ -120,7 +124,7 @@ class TransformerTrainer:
         :return: torch.utils.data.DataLoader, training dataloader
         """
 
-        return DataLoader(dataset_dict["train"], batch_size=self.bs, shuffle=True,
+        return DataLoader(self.train_ds, batch_size=self.bs, shuffle=True,
                           num_workers=4, pin_memory=True)
 
     def test_loader(self):
@@ -128,7 +132,7 @@ class TransformerTrainer:
         :return: torch.utils.data.DataLoader, test dataloader
         """
 
-        return DataLoader(dataset_dict["test"], batch_size=self.bs, shuffle=True,
+        return DataLoader(self.test_ds, batch_size=self.bs, shuffle=True,
                           num_workers=4, pin_memory=True)
 
 
@@ -171,13 +175,6 @@ def main():
                                                  column_name="text", add_bos_token=True,
                                                  num_proc=4)
 
-    # train/test split
-    dataset_dict = tokenized_dataset.train_test_split(test_size=1000)
-    train_loader = DataLoader(dataset_dict["train"], batch_size=batch_size, shuffle=True,
-                              num_workers=4, pin_memory=True)
-    test_loader = DataLoader(dataset_dict["test"], batch_size=batch_size, shuffle=False,
-                             num_workers=4, pin_memory=True)
-
     # training
     # define model parameters
     n_layers = 12
@@ -191,7 +188,7 @@ def main():
 
     model = MiniGPT(n_layers, d_vocab, context_length, d_model, n_heads, d_head)
     trainer = TransformerTrainer(model, batch_size, epochs, max_steps_per_epoch, learning_rate,
-                                 weight_decay, device)
+                                 weight_decay, tokenized_dataset, device)
     trainer.train()
 
 if __name__ == '__main__':
