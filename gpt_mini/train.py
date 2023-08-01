@@ -5,9 +5,38 @@ Train a MiniGPT model
 """
 
 import argparse
+import torch
 import datasets
 import transformers
 from transformer_lens.utils import tokenize_and_concatenate
+
+
+class TransformerTrainer:
+    """ class for training the MiniGPT transformer """
+
+    def __init__(self, model, bs, n_epochs, steps_per_epoch, lr, wd):
+        """ Constructor
+
+        :param model: nn.Module, transformer model to train
+        :param bs: int, batch size
+        :param n_epochs: int, number of epochs to train
+        :param steps_per_epochs: int, number of training steps per epoch
+        :param lr: float, learning rate
+        :param wd: float, weight decay rate
+        """
+
+        super().__init__()
+        self.model = model
+        self.bs = bs
+        self.n_epochs = n_epochs
+        self.steps_per_epoch = steps_per_epoch
+        self.lr = lr
+        self.wd = wd
+        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=lr, weight_decay=wd)
+        self.step = 0
+
+
+
 
 
 def parse_args():
