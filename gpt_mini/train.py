@@ -67,8 +67,13 @@ class TransformerTrainer:
 
         tokens = batch['tokens'].to(self.device)
         logits = self.model(tokens)
-        loss = -get_log_probs
-
+        loss = -get_log_probs(tokens, logits).mean()
+        loss.backward()
+        self.optimizer.step()
+        self.optimizer.zero_grad()
+        self.step += 1
+        
+        return loss
 
 
 
