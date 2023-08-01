@@ -6,15 +6,35 @@ Train a MiniGPT model
 
 import argparse
 import torch
+import torch.nn.functional as F
 import datasets
 import transformers
 from transformer_lens.utils import tokenize_and_concatenate
 
 
+def get_log_probs(tokens, logits):
+    """ Calculate the log probabilities for each token
+
+    :param tokens: torch.tensor(batch_size, position), input tokens
+    :param logits: torch.tensor(batch_size, position, d_vocab), output of transformer model
+    :return: torch.tensor(batch_size, position), log probabilities for each token
+    """
+
+    # calculate log probs of the logits
+    log_probs = logits.log_softmax(dim=-1)
+
+    # for each token (until the second to last), get the log prob of the next token
+    # -> store this in log_probs_for_tokens
+    log_probs_for_tokens = log_probs[:, :-1].gather(
+        dim=-1, index=tokens[:, 1:].unsqueeze(-1)).squeeze(-1)
+
+    return log_probs_for_tokens
+
+
 class TransformerTrainer:
     """ class for training the MiniGPT transformer """
 
-    def __init__(self, model, bs, n_epochs, steps_per_epoch, lr, wd):
+    def __init__(self, model, bs, n_epochs, steps_per_epoch, lr, wd, device='cpu'):
         """ Constructor
 
         :param model: nn.Module, transformer model to train
@@ -23,6 +43,7 @@ class TransformerTrainer:
         :param steps_per_epochs: int, number of training steps per epoch
         :param lr: float, learning rate
         :param wd: float, weight decay rate
+        :param device: str or torch.device obj, device to send tensors to
         """
 
         super().__init__()
@@ -33,8 +54,20 @@ class TransformerTrainer:
         self.lr = lr
         self.wd = wd
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=lr, weight_decay=wd)
+        self.device = device
         self.step = 0
 
+
+    def training_step(self, batch):
+        """ Do one training step with the batch
+
+        :param batch: dict, dictionary containing a batch of the tokenized dataset
+        :return: float, loss value
+        """
+
+        tokens = batch['tokens'].to(self.device)
+        logits = self.model(tokens)
+        loss = -get_log_probs
 
 
 
