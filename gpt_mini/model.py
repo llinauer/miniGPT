@@ -9,6 +9,7 @@ import math
 import torch
 from torch import nn
 import einops
+from transformers import activations
 
 
 class LayerNorm(nn.Module):
@@ -254,7 +255,7 @@ class MLP(nn.Module):
         self.b_out = nn.Parameter(torch.zeros(d_model))
 
         # activation
-        self.activation = nn.GELU()
+        self.activation = activations.gelu_new
 
     def forward(self, inputs):
         """
