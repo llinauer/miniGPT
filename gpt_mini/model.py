@@ -334,16 +334,15 @@ class TransformerBlock(nn.Module):
 
 
     def forward(self, inputs):
-        """ Pass inputs through the TransformerBlock. Apply LayerNorm before Attention and MLP
+        """ Pass inputs through the TransformerBlock. Apply LayerNorm before Attention and MLP,
+            add the outputs of the attention layer and the MLP layer to the residual stream
 
         :param inputs: torch.tensor(batch_size, position, d_model), layer inputs
         :return: torch.tensor(batch, position, d_vocab), output of MLP
         """
 
-        norm_attention_in = self.attention_ln(inputs)
-        attention_out = self.attention_layer(norm_attention_in)
-        norm_mlp_in = self.mlp_ln(attention_out)
-        mlp_out = self.mlp(norm_mlp_in)
+        attention_out = self.attention_layer(self.attention_ln(inputs)) + inputs
+        mlp_out = self.mlp(self.mlp_ln(attention_out)) + attention_out
 
         return mlp_out
 
