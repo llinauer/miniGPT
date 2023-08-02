@@ -197,6 +197,19 @@ def parse_args():
     parser.add_argument('--epochs', type=int, help='Number of epochs to train', required=True)
     return parser.parse_args()
 
+def get_dataset(dataset_name):
+    """ Download the desired dataset
+    :param dataset_name: str, name of the dataset to download
+    :return: datasets.DatasetDict object, the downloaded dataset
+    """
+
+    if dataset_name == 'pile-10k':
+        return datasets.load_dataset('NeelNanda/pile-10k', split='train').remove_columns('meta')
+    elif dataset_name == 'wikipedia-de':
+        return datasets.load_dataset('wikipedia', '20220301.de', split='train')
+    else:
+        return None
+
 
 def main():
     """ Main function
@@ -214,7 +227,7 @@ def main():
     weight_decay = 1e-2
 
     # load dataset
-    ds = datasets.load_dataset('NeelNanda/pile-10k', split='train').remove_columns('meta')
+    ds = get_dataset(args.dataset)
 
     # get tokenizer from huggingface GPT2 implementation
     tokenizer = transformers.GPT2Tokenizer.from_pretrained('gpt2')
