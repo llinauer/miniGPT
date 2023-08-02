@@ -247,7 +247,7 @@ class MLP(nn.Module):
         # create weights and biases for hidden and output layer
         self.W_hidden = nn.Parameter(torch.empty(d_model, 4*d_model))
         torch.nn.init.normal_(self.W_hidden, std=init_std)
-        self.b_in = nn.Parameter(torch.zeros(4*d_model))
+        self.b_hidden = nn.Parameter(torch.zeros(4*d_model))
 
         self.W_out = nn.Parameter(torch.empty(4*d_model, d_model))
         torch.nn.init.normal_(self.W_out, std=init_std)
