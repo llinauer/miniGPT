@@ -53,12 +53,12 @@ class Embedding(nn.Module):
         Translate the input tokens to the embedding space
     """
 
-    def __init__(self, d_model, d_vocab, init_std):
+    def __init__(self, d_model, d_vocab, init_std=0.02):
         """ Initialize the Embedding layer with the embedding matrix
 
         :param d_model: int, size of the transformer model
         :param d_vocab: int, size of the vocabulary
-        :param init_std: float, standard deviation for initializing the weights
+        :param init_std: float, standard deviation for initializing the weights (default = 0.02)
         """
         super().__init__()
         self.W_E = nn.Parameter(torch.empty((d_vocab, d_model)))
@@ -85,7 +85,7 @@ class PositionalEmbedding(nn.Module):
 
         :param context_length: int, context length of the transformer
         :param d_model: int, size of the transformer model
-        :param init_std: float, standard deviation for initializing the weights
+        :param init_std: float, standard deviation for initializing the weights (default = 0.02)
         """
         super().__init__()
         self.W_pos = nn.Parameter(torch.empty((context_length, d_model)))
