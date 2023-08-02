@@ -14,6 +14,7 @@ from transformer_lens.utils import tokenize_and_concatenate
 from model import MiniGPT
 import numpy as np
 import tqdm
+import plotly.express as px
 
 def get_log_probs(tokens, logits):
     """ Calculate the log probabilities for each token
@@ -63,6 +64,8 @@ class TransformerTrainer:
         self.train_ds = dataset_dict['train']
         self.test_ds = dataset_dict['test']
         self.step = 0
+        self.losses = []
+        self.accuracies = []
 
 
     def training_step(self, batch):
@@ -107,6 +110,7 @@ class TransformerTrainer:
         for epoch in range(self.n_epochs):
             for i, batch in enumerate(self.train_loader()):
                 loss = self.training_step(batch)
+                self.losses.append(loss.item())
                 progress_bar.update()
                 progress_bar.set_description(f'Epoch {epoch+1}, loss: {loss:.3f},'
                                              f'accuracy: {accuracy:.2f}')
@@ -117,6 +121,7 @@ class TransformerTrainer:
             correct_preds = torch.concat(
                 [self.validation_step(batch) for batch in self.test_loader()])
             accuracy = correct_preds.float().mean().item()
+            self.accuracies.append(accuracy)
 
 
     def train_loader(self):
@@ -136,6 +141,48 @@ class TransformerTrainer:
                           num_workers=4, pin_memory=True)
 
 
+
+def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, file_name):
+    """ Plot the losses and accuracies of the training process
+    :param losses: list, loss value of each timestep
+    :param accuracy: list, accuracy evaluated after each epoch
+    :param n_epochs: int, number of training epochs
+    :param steps_per_epoch: int, number of steps per epoch
+    :param file_name: str, prefix of the jpg files
+    :return: None
+    """
+
+    # loss curve
+    fig = px.line(y=losses, x=range(1, (n_epochs*steps_per_epoch)+1))
+    fig.update_layout(
+        title=f'Training loss, {n_epochs} epochs',
+        xaxis_title='Steps',
+        yaxis_title='Loss',
+        legend_title=None,
+        font=dict(
+            family="Courier New, monospace",
+            size=18,
+            color="black"
+        ),
+    )
+
+    fig.write_image(f'{file_name}_loss_{n_epochs}.jpg')
+
+    # accuracies
+    fig = px.line(y=accuracies, x=range(1, n_epochs+1))
+    fig.update_layout(
+        title=f'Validation accuracy, {n_epochs} epochs',
+        xaxis_title='Steps',
+        yaxis_title='Accuracy [%]',
+        legend_title=None,
+        font=dict(
+            family="Courier New, monospace",
+            size=18,
+            color="black"
+        ),
+    )
+
+    fig.write_image(f'{file_name}_accuracy_{n_epochs}.jpg')
 
 
 def parse_args():
@@ -177,11 +224,11 @@ def main():
 
     # training
     # define model parameters
-    n_layers = 8
+    n_layers = 6
     d_vocab = tokenizer.vocab_size
     context_length = 1024
     d_model = 256
-    n_heads = 6
+    n_heads = 12
     d_head = 64
 
     device = torch.device('cuda')
@@ -190,6 +237,13 @@ def main():
     trainer = TransformerTrainer(model, batch_size, epochs, max_steps_per_epoch, learning_rate,
                                  weight_decay, tokenized_dataset, device)
     trainer.train()
+
+    # save model parameters
+    torch.save(model.state_dict(), f'minigpt_pile10k_{epochs}_epochs_weights')
+
+    # plot loss and accuracy
+    plot_loss_and_accuracy(trainer.losses, trainer.accuracies, epochs, max_steps_per_epoch,
+                           'pile10k')
 
 if __name__ == '__main__':
     main()
