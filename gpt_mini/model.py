@@ -369,7 +369,7 @@ class MiniGPT(nn.Module):
         super().__init__()
         self.embed = Embedding(d_model, d_vocab, init_std)
         self.pos_embed = PositionalEmbedding(context_length, d_model, init_std)
-        self.trans_blocks = nn.ModuleList(
+        self.blocks = nn.ModuleList(
                 [TransformerBlock(d_model, n_heads, d_head, init_std, epsilon)
                  for _ in range(n_layers)])
         self.ln_final = LayerNorm(d_model, epsilon)
@@ -388,7 +388,7 @@ class MiniGPT(nn.Module):
         residual = self.embed(tokens) + self.pos_embed(tokens)
 
         # feed through all transformer blocks
-        for block in self.trans_blocks:
+        for block in self.blocks:
             residual = block(residual)
 
         # calculate output logits
