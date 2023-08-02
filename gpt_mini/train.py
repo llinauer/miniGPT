@@ -142,20 +142,20 @@ class TransformerTrainer:
 
 
 
-def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, file_name):
+def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, dataset_name):
     """ Plot the losses and accuracies of the training process
     :param losses: list, loss value of each timestep
     :param accuracy: list, accuracy evaluated after each epoch
     :param n_epochs: int, number of training epochs
     :param steps_per_epoch: int, number of steps per epoch
-    :param file_name: str, prefix of the jpg files
+    :param dataset_name: str, prefix of the jpg files
     :return: None
     """
 
     # loss curve
     fig = px.line(y=losses, x=range(1, len(losses)+1))
     fig.update_layout(
-        title=f'Training loss, {n_epochs} epochs',
+        title=f'Training loss, {dataset_name} dataset, {n_epochs} epochs',
         xaxis_title='Steps',
         yaxis_title='Loss',
         legend_title=None,
@@ -166,12 +166,12 @@ def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, file_n
         ),
     )
 
-    fig.write_image(f'{file_name}_loss_{n_epochs}.jpg')
+    fig.write_image(f'{dataset_name}_loss_{n_epochs}.jpg')
 
     # accuracies
     fig = px.line(y=accuracies, x=range(1, n_epochs+1))
     fig.update_layout(
-        title=f'Validation accuracy, {n_epochs} epochs',
+        title=f'Validation accuracy, {dataset_name} dataset, {n_epochs} epochs',
         xaxis_title='Steps',
         yaxis_title='Accuracy [%]',
         legend_title=None,
@@ -182,7 +182,7 @@ def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, file_n
         ),
     )
 
-    fig.write_image(f'{file_name}_accuracy_{n_epochs}.jpg')
+    fig.write_image(f'{dataset_name}_accuracy_{n_epochs}.jpg')
 
 
 def parse_args():
@@ -254,11 +254,11 @@ def main():
     trainer.train()
 
     # save model parameters
-    torch.save(model.state_dict(), f'minigpt_pile10k_{epochs}_epochs_weights')
+    torch.save(model.state_dict(), f'minigpt_{args.dataset}_{epochs}_epochs_weights')
 
     # plot loss and accuracy
     plot_loss_and_accuracy(trainer.losses, trainer.accuracies, epochs, max_steps_per_epoch,
-                           'pile10k')
+                           '{args.dataset}')
 
 if __name__ == '__main__':
     main()
