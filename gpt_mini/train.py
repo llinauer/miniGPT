@@ -116,7 +116,7 @@ class TransformerTrainer:
             # validation
             correct_preds = torch.concat(
                 [self.validation_step(batch) for batch in self.test_loader()])
-            accuracy = correct_predictions.float().mean().item()
+            accuracy = correct_preds.float().mean().item()
 
 
     def train_loader(self):
