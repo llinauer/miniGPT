@@ -141,7 +141,7 @@ class Attention(nn.Module):
         # W_O transforms back from d_head to d_model
         self.W_O = nn.Parameter(torch.empty(n_heads, d_head, d_model))
         nn.init.normal_(self.W_O, std=init_std)
-        self.b_O = nn.Parameter(torch.zeros(n_heads, d_model))
+        self.b_O = nn.Parameter(torch.zeros(d_model))
 
         # add IGNORE buffer and set it to a small, non-zero number for masking
         self.register_buffer("IGNORE", torch.tensor(-1e5, dtype=torch.float32,
@@ -223,15 +223,13 @@ class Attention(nn.Module):
         # multiply attention with values
         # attention is of shape (batch, n_heads, query_position, key_position)
         # values is of shape (batch, position, n_heads, d_head)
-        out = einops.einsum(attention, values, 'batch n_heads query_position key_position, '
-                                               'batch key_position n_heads d_head '
-                                               '-> batch query_position n_heads d_head')
+        z = einops.einsum(attention, values, 'batch n_heads query_position key_position, '
+                                             'batch key_position n_heads d_head '
+                                             '-> batch query_position n_heads d_head')
 
         # transform to d_model dimension and sum over all heads
-        out += einops.einsum(out, self.W_O, 'batch position n_heads d_head, n_heads d_head d_model'
-                                            ' -> batch position d_model')
-        out += self.b_O
-
+        out = einops.einsum(z, self.W_O, 'batch position n_heads d_head, n_heads d_head d_model'
+                                            ' -> batch position d_model') + self.b_O
         return out
 
 
