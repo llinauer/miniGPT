@@ -158,7 +158,7 @@ def main():
     args = parse_args()
 
     # define training hyperparams
-    batch_size = 64
+    batch_size = 16
     epochs = 10
     max_steps_per_epoch = 200
     learning_rate= 1e-3
@@ -168,20 +168,20 @@ def main():
     ds = datasets.load_dataset('NeelNanda/pile-10k', split='train').remove_columns('meta')
 
     # get tokenizer from huggingface GPT2 implementation
-    tokenizer = tokenizer = transformers.GPT2Tokenizer.from_pretrained('gpt2')
+    tokenizer = transformers.GPT2Tokenizer.from_pretrained('gpt2')
 
     # tokenize and concatenate dataset
-    tokenized_dataset = tokenize_and_concatenate(ds, tokenizer, streaming=False, max_length=768,
+    tokenized_dataset = tokenize_and_concatenate(ds, tokenizer, streaming=False, max_length=1024,
                                                  column_name="text", add_bos_token=True,
                                                  num_proc=4)
 
     # training
     # define model parameters
-    n_layers = 12
-    d_vocab = 50257
+    n_layers = 8
+    d_vocab = tokenizer.vocab_size
     context_length = 1024
-    d_model = 768
-    n_heads = 12
+    d_model = 256
+    n_heads = 6
     d_head = 64
 
     device = torch.device('cuda')
