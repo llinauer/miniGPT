@@ -153,7 +153,7 @@ def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, file_n
     """
 
     # loss curve
-    fig = px.line(y=losses, x=range(1, (n_epochs*steps_per_epoch)+1))
+    fig = px.line(y=losses, x=range(1, len(losses)+1))
     fig.update_layout(
         title=f'Training loss, {n_epochs} epochs',
         xaxis_title='Steps',
