@@ -172,7 +172,7 @@ def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, datase
     fig = px.line(y=accuracies, x=range(1, n_epochs+1))
     fig.update_layout(
         title=f'Validation accuracy, {dataset_name} dataset<br><sup>{n_epochs} epochs</sup>',
-        xaxis_title='Steps',
+        xaxis_title='Epochs',
         yaxis_title='Accuracy [%]',
         legend_title=None,
         font=dict(
