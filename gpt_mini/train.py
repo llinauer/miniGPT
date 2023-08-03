@@ -195,6 +195,7 @@ def parse_args():
     parser.add_argument('--dataset', type=str, help='Dataset to train on',
                         choices=['pile-10k', 'wikipedia-de'])
     parser.add_argument('--epochs', type=int, help='Number of epochs to train', required=True)
+    parser.add_argument('--steps', type=int, help='Number of steps per epoch', default=200)
     return parser.parse_args()
 
 def get_dataset(dataset_name):
@@ -222,7 +223,7 @@ def main():
     # define training hyperparams
     batch_size = 16
     epochs = args.epochs
-    max_steps_per_epoch = 200
+    max_steps_per_epoch = args.steps
     learning_rate= 1e-3
     weight_decay = 1e-2
 
