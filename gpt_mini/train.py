@@ -155,7 +155,7 @@ def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, datase
     # loss curve
     fig = px.line(y=losses, x=range(1, len(losses)+1))
     fig.update_layout(
-        title=f'Training loss, {dataset_name} dataset, {n_epochs} epochs',
+        title=f'Training loss, {dataset_name} dataset<br><sup>{n_epochs} epochs</sup>',
         xaxis_title='Steps',
         yaxis_title='Loss',
         legend_title=None,
@@ -171,7 +171,7 @@ def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, datase
     # accuracies
     fig = px.line(y=accuracies, x=range(1, n_epochs+1))
     fig.update_layout(
-        title=f'Validation accuracy, {dataset_name} dataset, {n_epochs} epochs',
+        title=f'Validation accuracy, {dataset_name} dataset<br><sup>{n_epochs} epochs</sup>',
         xaxis_title='Steps',
         yaxis_title='Accuracy [%]',
         legend_title=None,
@@ -258,7 +258,7 @@ def main():
 
     # plot loss and accuracy
     plot_loss_and_accuracy(trainer.losses, trainer.accuracies, epochs, max_steps_per_epoch,
-                           '{args.dataset}')
+                           f'{args.dataset}')
 
 if __name__ == '__main__':
     main()
