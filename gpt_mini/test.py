@@ -20,3 +20,12 @@ def parse_args():
     parser.add_argument('--decoding-method', type=str, choices=['greedy', 'beam', 'sample'],
                         help='Method to decode the transformer output')
     return parser.parse_args()
+
+
+def main():
+    """ Main function """
+    args = parse_args()
+
+
+if __name__ == '__main__':
+    main()
