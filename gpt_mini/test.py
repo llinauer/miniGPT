@@ -19,8 +19,20 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, help='Path to the weights file', required=True)
     parser.add_argument('--decoding-method', type=str, choices=['greedy', 'beam', 'sample'],
-                        help='Method to decode the transformer output')
+                        help='Method to decode the transformer output', required=True)
     return parser.parse_args()
+
+def greedy_search():
+    """ Implement greedy search deconding method """
+    raise NotImplementedError
+
+def beam_search():
+    """ Implement beam search deconding method """
+    raise NotImplementedError
+
+def sample():
+    """ Implement sample deconding method """
+    raise NotImplementedError
 
 
 def main():
@@ -56,6 +68,13 @@ def main():
         print(e)
         return
 
+    # get decoding method
+    if args.decoding_method == 'greedy':
+        decoding_func = greedy_search
+    elif args.decoding_method == 'beam':
+        decoding_func = beam_search
+    elif args.decoding_method == 'sample':
+        decoding_func = sample
 
 
 if __name__ == '__main__':
