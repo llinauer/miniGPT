@@ -20,6 +20,7 @@ def parse_args():
     parser.add_argument('--weights', type=str, help='Path to the weights file', required=True)
     parser.add_argument('--decoding-method', type=str, choices=['greedy', 'sample'],
                         help='Method to decode the transformer output', required=True)
+    parser.add_argument('--prompt', type=str, help='Prompt to generate text with', required=True)
     return parser.parse_args()
 
 def greedy_search():
@@ -40,7 +41,6 @@ def sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
     """
 
     tokens = input_tokens.clone()
-
     model.eval()
     for i in range(max_tokens):
         # get logits of input_tokens
@@ -50,14 +50,13 @@ def sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
         # sample from a categorical distribution with vocab_size possible outcomes and 
         # logits as weights
         next_token = torch.distributions.categorical.Categorical(logits=logits).sample().item()
-        
+        next_token = torch.tensor([next_token]).unsqueeze(0)
         # add next_token to input_tokens
-        tokens = torch.cat([input_tokens, next_token], dim=-1)
-
+        tokens = torch.cat([tokens, next_token], dim=-1)
         # if the next token is EOS, stop generating
         if next_token == eos_token_id:
             break
-    return tokens
+    return tokens[0]
 
 
 def main():
@@ -99,6 +98,15 @@ def main():
     elif args.decoding_method == 'beam':
         decoding_func = beam_search
 
+    # generate text
+    prompt_tokens = tokenizer.encode(args.prompt, return_tensors='pt')
+    generated_tokens = sample(model, prompt_tokens, max_tokens=40,
+                              eos_token_id=tokenizer.eos_token_id)
+    # decode text
+    generated_text = tokenizer.decode(generated_tokens)
+
+    print(f'Input: {args.prompt}')
+    print(f'Output: {generated_text}')
 
 if __name__ == '__main__':
     main()
