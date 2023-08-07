@@ -30,6 +30,35 @@ def beam_search():
     """ Implement beam search deconding method """
     raise NotImplementedError
 
+def sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
+    """ Produce output text with the model in an autoregressive way
+    :param model: torch.nn.Module, transformer model
+    :param input_tokens: torch.tensor, Input tokens to produce text with
+    :param max_tokens: int, Maximum number of tokens to generate
+    :param eos_token_id: int, id of the EOS token
+    :return: torch.tensor, generated tokens
+    """
+
+    tokens = input_tokens.clone()
+
+    model.eval()
+    for i in range(max_tokens):
+        # get logits of input_tokens
+        logits = model(input_tokens)
+        # use logits only for last token
+        logits = logits[0, -1]
+        # sample from a categorical distribution with vocab_size possible outcomes and 
+        # logits as weights
+        next_token = torch.distributions.categorical.Categorical(logits=logits).sample().item()
+        
+        # add next_token to input_tokens
+        tokens = torch.cat([input_tokens, next_token], dim=-1)
+
+        # if the next token is EOS, stop generating
+        if next_token == eos_token_id:
+            break
+    return tokens
+
 
 def main():
     """ Main function """
