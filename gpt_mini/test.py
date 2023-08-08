@@ -34,9 +34,45 @@ def greedy_search(logits):
     return next_token
 
 
-def beam_search():
-    """ Implement beam search deconding method """
-    raise NotImplementedError
+def beam_search(model, input_tokens, tokens_per_beam, max_tokens=40, eos_token_id=50256):
+    """ Beam search sampling method
+        
+    :param model: torch.nn.Module, transformer model
+    :param input_tokens: torch.tensor, Input tokens to produce text with
+    :param sampling_function: function, function to sample next token from logits
+    :param max_tokens: int, Maximum number of tokens to generate
+    :param eos_token_id: int, id of the EOS token
+    :return: torch.tensor, generated tokens
+    """
+
+    
+    tokens = input_tokens.clone()
+    logprob_sums = torch.tensor([.0])
+    model.eval()
+    for i in range(max_tokens):
+        
+    
+    # get logits from model 
+    logits = model(tokens)
+    # get logprobs from logits, but only for last tokens in the batch
+    logprobs = logits[:, -1, :].log_softmax(dim=-1)
+
+    # get the top tokens_per_beam tokens for each beam
+    topk_logprobs, topk_tokens = logprobs.topk(k=tokens_per_beam)
+
+    # get new logprob sums
+    new_logprob_sums = sum([einops.repeat(logprob_sums, 'batch -> batch k', k=tokens_per_beam),
+                            einops.rearrange(topk_logprobs), 'batch k -> (batch k)'])
+    # get new tokens for each beam
+    new_tokens = torch.concat([einops.repeat(tokens, 'batch seq -> (batch k) seq',
+                                             k=tokens_per_beam),
+                               einops.rearrange(topk_tokens, 'batch k -> (batch k) 1')])
+    print(new_tokens)
+
+    
+
+
+
 
 def sample(model, input_tokens, sampling_function, max_tokens=40, eos_token_id=50256):
     """ Produce output text with the model in an autoregressive way
