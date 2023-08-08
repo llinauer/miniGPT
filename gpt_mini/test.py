@@ -18,8 +18,8 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, help='Path to the weights file', required=True)
-    parser.add_argument('--decoding-method', type=str, choices=['greedy', 'sample'],
-                        help='Method to decode the transformer output', required=True)
+    parser.add_argument('--sampling-method', type=str, choices=['greedy', 'sample'], required=True,
+                        help='Method to sample next tokens from the transformer output')
     parser.add_argument('--prompt', type=str, help='Prompt to generate text with', required=True)
     return parser.parse_args()
 
@@ -31,10 +31,11 @@ def beam_search():
     """ Implement beam search deconding method """
     raise NotImplementedError
 
-def sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
+def sample(model, input_tokens, sampling_function, max_tokens=40, eos_token_id=50256):
     """ Produce output text with the model in an autoregressive way
     :param model: torch.nn.Module, transformer model
     :param input_tokens: torch.tensor, Input tokens to produce text with
+    :param sampling_function: function, function to sample next token from logits
     :param max_tokens: int, Maximum number of tokens to generate
     :param eos_token_id: int, id of the EOS token
     :return: torch.tensor, generated tokens
@@ -47,9 +48,9 @@ def sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
         logits = model(input_tokens)
         # use logits only for last token
         logits = logits[0, -1]
-        # sample from a categorical distribution with vocab_size possible outcomes and 
-        # logits as weights
-        next_token = torch.distributions.categorical.Categorical(logits=logits).sample().item()
+    
+        # sample next token from logits
+        next_token = sampling_function(logits)
         next_token = torch.tensor([next_token]).unsqueeze(0)
         # add next_token to input_tokens
         tokens = torch.cat([tokens, next_token], dim=-1)
@@ -93,14 +94,14 @@ def main():
         return
 
     # get decoding method
-    if args.decoding_method == 'greedy':
-        decoding_func = greedy_search
-    elif args.decoding_method == 'beam':
-        decoding_func = beam_search
+    if args.sampling_method == 'greedy':
+        sampling_func = greedy_search
+    elif args.sampling_method == 'beam':
+        sampling_func = beam_search
 
     # generate text
     prompt_tokens = tokenizer.encode(args.prompt, return_tensors='pt')
-    generated_tokens = sample(model, prompt_tokens, max_tokens=40,
+    generated_tokens = sample(model, prompt_tokens, sampling_func, max_tokens=40,
                               eos_token_id=tokenizer.eos_token_id)
     # decode text
     generated_text = tokenizer.decode(generated_tokens)
