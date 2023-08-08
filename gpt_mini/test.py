@@ -26,7 +26,8 @@ def parse_args():
 
 
 
-def beam_search(model, input_tokens, tokens_per_beam, max_tokens=40, eos_token_id=50256):
+def beam_search(model, input_tokens, tokens_per_beam, max_tokens=40, eos_token_id=50256,
+                device='cuda'):
     """ Beam search sampling method
         
     :param model: torch.nn.Module, transformer model
@@ -38,8 +39,8 @@ def beam_search(model, input_tokens, tokens_per_beam, max_tokens=40, eos_token_i
     """
 
     
-    tokens = input_tokens.clone()
-    logprob_sums = torch.tensor([.0])
+    tokens = input_tokens.clone().to(device)
+    logprob_sums = torch.tensor([.0]).to(device)
     model.eval()
     #for i in range(max_tokens):
         
@@ -58,10 +59,9 @@ def beam_search(model, input_tokens, tokens_per_beam, max_tokens=40, eos_token_i
     # get new tokens for each beam
     new_tokens = torch.concat([einops.repeat(tokens, 'batch seq -> (batch k) seq',
                                              k=tokens_per_beam),
-                               einops.rearrange(topk_tokens, 'batch k -> (batch k) 1')])
-    print(new_tokens)
+                               einops.rearrange(topk_tokens, 'batch k -> (batch k) 1')],
+                               dim=-1)
 
-    
 
 
 
