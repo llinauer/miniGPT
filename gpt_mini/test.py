@@ -8,6 +8,7 @@ import argparse
 import torch
 import transformers
 from pathlib import Path
+import einops
 from model import MiniGPT
 
 def parse_args():
@@ -18,7 +19,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, help='Path to the weights file', required=True)
-    parser.add_argument('--sampling-method', type=str, choices=['greedy', 'sample'], required=True,
+    parser.add_argument('--sampling-method', type=str, choices=['greedy', 'beam'], required=True,
                         help='Method to sample next tokens from the transformer output')
     parser.add_argument('--prompt', type=str, help='Prompt to generate text with', required=True)
     return parser.parse_args()
@@ -53,7 +54,7 @@ def beam_search(model, input_tokens, tokens_per_beam, max_tokens=40, eos_token_i
 
     # get new logprob sums
     new_logprob_sums = sum([einops.repeat(logprob_sums, 'batch -> batch k', k=tokens_per_beam),
-                            einops.rearrange(topk_logprobs), 'batch k -> (batch k)'])
+                            einops.rearrange(topk_logprobs, 'batch k -> (batch k)')])
     # get new tokens for each beam
     new_tokens = torch.concat([einops.repeat(tokens, 'batch seq -> (batch k) seq',
                                              k=tokens_per_beam),
@@ -135,7 +136,8 @@ def main():
         generated_tokens = greedy_sample(model, prompt_tokens, max_tokens=40,
                                          eos_token_id=tokenizer.eos_token_id)
     elif args.sampling_method == 'beam':
-        sampling_func = beam_search
+        generated_tokens = beam_search(model, prompt_tokens, tokens_per_beam=3, max_tokens=40,
+                                       eos_token_id=tokenizer.eos_token_id)
 
     # decode text
     generated_text = tokenizer.decode(generated_tokens)
