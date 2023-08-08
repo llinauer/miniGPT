@@ -23,15 +23,6 @@ def parse_args():
     parser.add_argument('--prompt', type=str, help='Prompt to generate text with', required=True)
     return parser.parse_args()
 
-def greedy_search(logits):
-    """ Implement greedy search deconding method
-    :param logits: torch.tensor, output logits of the transformer
-    :return: int, sampled next token
-    """
-
-    # use the index of the biggest logit -> greedy sampling
-    next_token = logits.argmax().item()
-    return next_token
 
 
 def beam_search(model, input_tokens, tokens_per_beam, max_tokens=40, eos_token_id=50256):
@@ -49,7 +40,7 @@ def beam_search(model, input_tokens, tokens_per_beam, max_tokens=40, eos_token_i
     tokens = input_tokens.clone()
     logprob_sums = torch.tensor([.0])
     model.eval()
-    for i in range(max_tokens):
+    #for i in range(max_tokens):
         
     
     # get logits from model 
@@ -74,11 +65,11 @@ def beam_search(model, input_tokens, tokens_per_beam, max_tokens=40, eos_token_i
 
 
 
-def sample(model, input_tokens, sampling_function, max_tokens=40, eos_token_id=50256):
-    """ Produce output text with the model in an autoregressive way
+def greedy_sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
+    """ Produce output text with the model by greedily sampling the maxium logits
+
     :param model: torch.nn.Module, transformer model
     :param input_tokens: torch.tensor, Input tokens to produce text with
-    :param sampling_function: function, function to sample next token from logits
     :param max_tokens: int, Maximum number of tokens to generate
     :param eos_token_id: int, id of the EOS token
     :return: torch.tensor, generated tokens
@@ -93,7 +84,7 @@ def sample(model, input_tokens, sampling_function, max_tokens=40, eos_token_id=5
         logits = logits[0, -1]
     
         # sample next token from logits
-        next_token = sampling_function(logits)
+        next_token = logits.argmax().item()
         next_token = torch.tensor([next_token]).unsqueeze(0)
         # add next_token to input_tokens
         tokens = torch.cat([tokens, next_token], dim=-1)
@@ -135,17 +126,17 @@ def main():
     except Exception as e:
         print(e)
         return
+    
+    # input prompt
+    prompt_tokens = tokenizer.encode(args.prompt, return_tensors='pt')
 
-    # get decoding method
+    # produce output text based on chosen method
     if args.sampling_method == 'greedy':
-        sampling_func = greedy_search
+        generated_tokens = greedy_sample(model, prompt_tokens, max_tokens=40,
+                                         eos_token_id=tokenizer.eos_token_id)
     elif args.sampling_method == 'beam':
         sampling_func = beam_search
 
-    # generate text
-    prompt_tokens = tokenizer.encode(args.prompt, return_tensors='pt')
-    generated_tokens = sample(model, prompt_tokens, sampling_func, max_tokens=40,
-                              eos_token_id=tokenizer.eos_token_id)
     # decode text
     generated_text = tokenizer.decode(generated_tokens)
 
