@@ -23,9 +23,16 @@ def parse_args():
     parser.add_argument('--prompt', type=str, help='Prompt to generate text with', required=True)
     return parser.parse_args()
 
-def greedy_search():
-    """ Implement greedy search deconding method """
-    raise NotImplementedError
+def greedy_search(logits):
+    """ Implement greedy search deconding method
+    :param logits: torch.tensor, output logits of the transformer
+    :return: int, sampled next token
+    """
+
+    # use the index of the biggest logit -> greedy sampling
+    next_token = logits.argmax().item()
+    return next_token
+
 
 def beam_search():
     """ Implement beam search deconding method """
