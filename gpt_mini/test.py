@@ -52,7 +52,7 @@ def sample(model, input_tokens, sampling_function, max_tokens=40, eos_token_id=5
     model.eval()
     for i in range(max_tokens):
         # get logits of input_tokens
-        logits = model(input_tokens)
+        logits = model(tokens)
         # use logits only for last token
         logits = logits[0, -1]
     
