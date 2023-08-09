@@ -11,7 +11,18 @@ from generate import Beams
 from transformer_lens import EasyTransformer
 
 
-def test_beam_generation(beams):
+def test_beam_generation(model, tokenizer):
+
+    beams = Beams(
+        model,
+        tokenizer,
+        logprob_sums = torch.tensor([-10.0, -15.0, -20.0]),
+        tokens = torch.tensor([
+            [5661, 318, 262, 2368],
+            [5661, 318, 262, 1218],
+            [5661, 318, 262, 717],
+        ])
+    )
 
     print("Testing generate, without no_repeat_ngram_size argument:")
     new_beams = beams.generate(toks_per_beam=2)
@@ -63,18 +74,8 @@ def main():
     # load gpt2 weights
     model = load_gpt2_weights(model, reference_gpt2)
     
-    beams = Beams(
-        model,
-        tokenizer,
-        logprob_sums = torch.tensor([-10.0, -15.0, -20.0]),
-        tokens = torch.tensor([
-            [5661, 318, 262, 2368],
-            [5661, 318, 262, 1218],
-            [5661, 318, 262, 717],
-        ])
-    )
 
-    test_beam_generation(beams)
+    test_beam_generation(model, tokenizer)
 
 if __name__ == '__main__':
     main()
