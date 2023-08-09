@@ -13,14 +13,13 @@ from transformer_lens import EasyTransformer
 
 def test_beam_generation(model, tokenizer):
 
-    beams = Beams(
-        model,
-        tokenizer,
+    # first test case
+    beams = Beams( model, tokenizer,
         logprob_sums = torch.tensor([-10.0, -15.0, -20.0]),
         tokens = torch.tensor([
-            [5661, 318, 262, 2368],
-            [5661, 318, 262, 1218],
-            [5661, 318, 262, 717],
+            [5661, 318, 262, 2368], # this is the third
+            [5661, 318, 262, 1218], # this is the second
+            [5661, 318, 262, 717], # this is the first
         ])
     )
 
@@ -29,6 +28,17 @@ def test_beam_generation(model, tokenizer):
     new_beams.print()
     assert new_beams.logprobs_and_completions[0][1] == "this is the third time"
 
+    # second test case
+    beams = Beams(model, tokenizer,
+        logprob_sums = torch.tensor([0.]),
+        tokens = torch.tensor([
+            [464, 1181,  286,  435, 8480,  318] # the state of alaska is
+        ])
+    )
+    
+    new_beams = beams.generate(toks_per_beam=15)
+    new_beams.print()
+    assert new_beams.logprobs_and_completions[9][1] == "The state of alaska is located"
 
 def load_gpt2_weights(model, reference_gpt2):
 
