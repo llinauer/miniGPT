@@ -39,7 +39,7 @@ class Beams:
         ]
 
 
-    def generate(self, toks_per_beam, no_repeat_ngram_size):
+    def generate(self, toks_per_beam, no_repeat_ngram_size=None):
         """
         Starting from the current set of beams (which has length `num_beams`), returns a new
         set of `num_beams * toks_per_beam`, containing the best `toks_per_beam` continuations for each
@@ -48,7 +48,29 @@ class Beams:
         Optional argument `no_repeat_ngram_size` means your model won't generate any sequences with
         a repeating n-gram of this length.
         """
-        pass
+
+        # get logits and logprobs
+        logits = self.model(self.tokens)[:, -1, :]
+        logprobs = logits.log_softmax(dim=-1)
+
+        # get the top k logprobs and their indices
+        topk_logprobs, topk_token_idcs = logprobs.topk(k=toks_per_beam)
+
+        logprob_sums_unpacked = einops.repeat(self.logprob_sums, "batch -> batch k",
+                                              k=toks_per_beam).flatten()
+        topk_logprobs_flattened = einops.rearrange(topk_logprobs, "batch k -> (batch k)")
+ 
+
+        new_logprob_sums = sum([logprob_sums_unpacked, topk_logprobs_flattened])
+
+        new_tokens = torch.concat([einops.repeat(self.tokens, "batch seq -> (batch k) seq",
+                                                 k=toks_per_beam),
+                                   einops.rearrange(topk_token_idcs, "batch k -> (batch k) 1")
+                                  ], dim=-1)
+
+        return self.new_beams(new_logprob_sums, new_tokens)
+
+
 
     def filter(self, num_beams):
         """
