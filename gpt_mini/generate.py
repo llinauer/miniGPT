@@ -12,7 +12,6 @@ import einops
 from tqdm import tqdm
 from model import MiniGPT
 
-
 class Beams:
     """Class to store beams during beam search."""
     
@@ -64,6 +63,22 @@ class Beams:
         pass
 
 
+
+    def print(self, max_print_chars=80):
+        """
+        Prints out a set of sequences with their corresponding logitsums.
+        """
+        if len(self.tokens) == 0:
+            return
+
+        output = []
+        print('Best completions')
+
+        for logprob_sum, tokens in zip(self.logprob_sums, self.tokens):
+            text = self.tokenizer.decode(tokens)
+            if len(repr(text)) > max_print_chars:
+                text = text[:int(0.3 * max_print_chars)] + " ... " + text[-int(0.7 * max_print_chars):]
+            print(f'logprob_sum: {logprob_sum:>8.3f}: {text}')
 
 
 def parse_args():
