@@ -85,7 +85,7 @@ def greedy_sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
         logits = logits[0, -1]
     
         # sample next token from logits
-        next_token = logits.argmax().item()
+        next_token = logits.softmax(dim=-1).argmax().item()
         next_token = torch.tensor([next_token]).unsqueeze(0)
         # add next_token to input_tokens
         tokens = torch.cat([tokens, next_token], dim=-1)
