@@ -9,7 +9,77 @@ import torch
 import transformers
 from pathlib import Path
 import einops
+from tqdm import tqdm
 from model import MiniGPT
+
+
+class Beams:
+    """Class to store beams during beam search."""
+    
+    def __init__(self, model, tokenizer, logprob_sums, tokens):
+        self.model = model
+        self.tokenizer = tokenizer
+        self. logprob_sums = logprob_sums
+        self.tokens = tokens
+
+
+    def new_beams(self, logprob_sums, tokens):
+        """Creates a new Beams object with the same model and tokenizer."""
+        return Beams(self.model, self.tokenizer, logprob_sums, tokens)
+
+    def __getitem__(self, idx):
+        """Allows you to take a slice of the beams object along the batch dimension."""
+        return self.new_beams(self.logprob_sums[idx], self.tokens[idx])
+
+    @property
+    def logprobs_and_completions(self):
+        """Returns self as a list of logprob sums and completions (useful for getting final output)."""
+        return [
+            (logprob_sum.item(), self.tokenizer.decode(tokens))
+            for (logprob_sum, tokens) in zip(self.logprob_sums, self.tokens)
+        ]
+
+
+    def generate(self, toks_per_beam, no_repeat_ngram_size):
+        """
+        Starting from the current set of beams (which has length `num_beams`), returns a new
+        set of `num_beams * toks_per_beam`, containing the best `toks_per_beam` continuations for each
+        of the original beams.
+
+        Optional argument `no_repeat_ngram_size` means your model won't generate any sequences with
+        a repeating n-gram of this length.
+        """
+        pass
+
+    def filter(self, num_beams):
+        """
+        Returns:
+            best_beams: Beams
+                filtered version of self, containing all best `num_beams` which are also not terminated.
+
+            early_terminations: Beams
+                filtered version of self, containing all best `num_beams` which are also terminated.
+                i.e. the sum of lengths of these two should equal `num_beams`.
+        """
+        pass
+
+
+    def print(self, title="Best completions", max_print_chars=80):
+        """
+        Prints out a set of sequences with their corresponding logitsums.
+        """
+        if len(self.tokens) == 0:
+            return
+        table = Table("logitsum", "completion", title=title)
+        for logprob_sum, tokens in zip(self.logprob_sums, self.tokens):
+            text = self.tokenizer.decode(tokens)
+            if len(repr(text)) > max_print_chars:
+                text = text[:int(0.3 * max_print_chars)] + " ... " + text[-int(0.7 * max_print_chars):]
+            table.add_row(f"{logprob_sum:>8.3f}", repr(text))
+        rprint(table)
+
+
+
 
 def parse_args():
     """ Parse the command-line args
@@ -23,47 +93,6 @@ def parse_args():
                         help='Method to sample next tokens from the transformer output')
     parser.add_argument('--prompt', type=str, help='Prompt to generate text with', required=True)
     return parser.parse_args()
-
-
-
-def beam_search(model, input_tokens, tokens_per_beam, max_tokens=40, eos_token_id=50256,
-                device='cuda'):
-    """ Beam search sampling method
-        
-    :param model: torch.nn.Module, transformer model
-    :param input_tokens: torch.tensor, Input tokens to produce text with
-    :param sampling_function: function, function to sample next token from logits
-    :param max_tokens: int, Maximum number of tokens to generate
-    :param eos_token_id: int, id of the EOS token
-    :return: torch.tensor, generated tokens
-    """
-
-    
-    tokens = input_tokens.clone().to(device)
-    logprob_sums = torch.tensor([.0]).to(device)
-    model.eval()
-    #for i in range(max_tokens):
-        
-    
-    # get logits from model 
-    logits = model(tokens)
-    # get logprobs from logits, but only for last tokens in the batch
-    logprobs = logits[:, -1, :].log_softmax(dim=-1)
-
-    # get the top tokens_per_beam tokens for each beam
-    topk_logprobs, topk_tokens = logprobs.topk(k=tokens_per_beam)
-
-    # get new logprob sums
-    new_logprob_sums = sum([einops.repeat(logprob_sums, 'batch -> batch k', k=tokens_per_beam),
-                            einops.rearrange(topk_logprobs, 'batch k -> (batch k)')])
-    # get new tokens for each beam
-    new_tokens = torch.concat([einops.repeat(tokens, 'batch seq -> (batch k) seq',
-                                             k=tokens_per_beam),
-                               einops.rearrange(topk_tokens, 'batch k -> (batch k) 1')],
-                               dim=-1)
-
-
-
 
 
 def greedy_sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
@@ -110,10 +139,8 @@ def main():
     n_heads = 12
     d_head = 64
 
-    device = torch.device('cuda')
-    
     # create model
-    model = MiniGPT(n_layers, d_vocab, context_length, d_model, n_heads, d_head).to(device)
+    model = MiniGPT(n_layers, d_vocab, context_length, d_model, n_heads, d_head)
 
     # load weights
     weights_path = Path(args.weights)
@@ -136,8 +163,7 @@ def main():
         generated_tokens = greedy_sample(model, prompt_tokens, max_tokens=40,
                                          eos_token_id=tokenizer.eos_token_id)
     elif args.sampling_method == 'beam':
-        generated_tokens = beam_search(model, prompt_tokens, tokens_per_beam=3, max_tokens=40,
-                                       eos_token_id=tokenizer.eos_token_id)
+        generated_tokens = beam_search(model, prompt_tokens, beam_size=3, max_length=8)
 
     # decode text
     generated_text = tokenizer.decode(generated_tokens)
