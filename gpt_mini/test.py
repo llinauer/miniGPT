@@ -64,21 +64,6 @@ class Beams:
         pass
 
 
-    def print(self, title="Best completions", max_print_chars=80):
-        """
-        Prints out a set of sequences with their corresponding logitsums.
-        """
-        if len(self.tokens) == 0:
-            return
-        table = Table("logitsum", "completion", title=title)
-        for logprob_sum, tokens in zip(self.logprob_sums, self.tokens):
-            text = self.tokenizer.decode(tokens)
-            if len(repr(text)) > max_print_chars:
-                text = text[:int(0.3 * max_print_chars)] + " ... " + text[-int(0.7 * max_print_chars):]
-            table.add_row(f"{logprob_sum:>8.3f}", repr(text))
-        rprint(table)
-
-
 
 
 def parse_args():
