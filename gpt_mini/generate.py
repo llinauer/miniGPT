@@ -16,6 +16,14 @@ class Beams:
     """Class to store beams during beam search."""
     
     def __init__(self, model, tokenizer, logprob_sums, tokens):
+        """ Constructor
+        :param model: nn.Module, transformer model
+        :param tokenizer: transformers.tokenizer, tokenizer to use
+        :param logprob_sums: torch.tensor(n_beams), current logprob sums of all beams
+        :param tokens: torch.tensor(n_beams, seq_length), current best sampling tokens
+        :return: None
+        """
+
         self.model = model
         self.tokenizer = tokenizer
         self. logprob_sums = logprob_sums
@@ -23,30 +31,36 @@ class Beams:
 
 
     def new_beams(self, logprob_sums, tokens):
-        """Creates a new Beams object with the same model and tokenizer."""
+        """Creates a new Beams object with updated logprob_sums and tokens
+        :param logprob_sums: torch.tensor(n_beams), current logprob sums of all beams
+        :param tokens: torch.tensor(n_beams, seq_length), current best sampling tokens
+        :return: Beams object
+        """
         return Beams(self.model, self.tokenizer, logprob_sums, tokens)
 
     def __getitem__(self, idx):
-        """Allows you to take a slice of the beams object along the batch dimension."""
+        """Allows you to take a slice of the beams object along the batch dimension
+        :param idx: int/list/slice, index the beams
+        :return: Beams object
+        """
         return self.new_beams(self.logprob_sums[idx], self.tokens[idx])
 
     @property
     def logprobs_and_completions(self):
-        """Returns self as a list of logprob sums and completions (useful for getting final output)."""
-        return [
-            (logprob_sum.item(), self.tokenizer.decode(tokens))
-            for (logprob_sum, tokens) in zip(self.logprob_sums, self.tokens)
-        ]
+        """Returns self as a list of logprob sums and completions
+        :return: list, list of logprob sums and sampled tokens
+        """
+        return [(logprob_sum.item(), self.tokenizer.decode(tokens)) for
+                (logprob_sum, tokens) in zip(self.logprob_sums, self.tokens)]
 
 
     def generate(self, toks_per_beam, no_repeat_ngram_size=None):
-        """
-        Starting from the current set of beams (which has length `num_beams`), returns a new
-        set of `num_beams * toks_per_beam`, containing the best `toks_per_beam` continuations for each
-        of the original beams.
+        """ Starting from the current set of beams, returns a new
+            set, containing the best `toks_per_beam` continuations for each of the original beams.
 
-        Optional argument `no_repeat_ngram_size` means your model won't generate any sequences with
-        a repeating n-gram of this length.
+        :param toks_per_beam: int, how many tokens should be sampled for each beam
+        :param no_repeat_ngram_size: int, Optional (default=`None`)
+                                     the maximum length of repeating n-grams to be allowed
         """
 
         # get logits and logprobs
@@ -80,14 +94,10 @@ class Beams:
 
 
     def filter(self, num_beams):
-        """
-        Returns:
-            best_beams: Beams
-                filtered version of self, containing all best `num_beams` which are also not terminated.
-
-            early_terminations: Beams
-                filtered version of self, containing all best `num_beams` which are also terminated.
-                i.e. the sum of lengths of these two should equal `num_beams`.
+        """ Filter the top `num_beams`
+        :param num_beams: int, how many beams to keep
+        :return: best_beams: Beams, best `num_beams` which are not terminated.
+                 early_terminations: Beams, best `num_beams` which are also terminated.
         """
 
         # Get the indices of top `num_beams` beams
@@ -110,18 +120,12 @@ class Beams:
 
 
     def get_topk_non_repeating(self, logprobs, no_repeat_ngram_size, k):
-        """
-        logprobs: 
-            tensor of the log-probs for the next token
-        no_repeat_ngram_size:
-            size of ngram to avoid repeating
-        k:
-            number of top logits to return, for each beam in our collection
-    
-        Returns:
-            equivalent to the output of `logprobs.topk(dim=-1)`, but makes sure
-            that no returned tokens would produce an ngram of size `no_repeat_ngram_size`
-            which has already appeared in `self.tokens`.
+        """ Generate new tokens but exclude those sequences, which have `no_repeat_ngram_size`
+            repeating n-grams in it (e.g. the the the = repeating 3-gram)
+        :param logprobs: torch.tensor(n_beams, vocab_size), logprobs of all beams
+        :param no_repeat_ngram_size: int, the maximum allowed length of repeating n-grams
+        :param k: int, number of top logits to return for each beam 
+        :return: output of logprobs.topk, without repeating n-grams 
         """
 
         batch, seq_len = self.tokens.shape
@@ -153,8 +157,9 @@ class Beams:
 
 
     def print(self, max_print_chars=80):
-        """
-        Prints out a set of sequences with their corresponding logitsums.
+        """ Prints out a set of sequences with their corresponding logprob sums
+        :param max_print_chars: int, maximum number of characters to print for each sequence
+        :return: None
         """
         if len(self.tokens) == 0:
             return
