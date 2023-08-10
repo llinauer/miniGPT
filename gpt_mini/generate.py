@@ -176,15 +176,20 @@ class Beams:
 
 def beam_search(model, tokenizer, prompt, num_return_sequences, num_beams, max_new_tokens,
                 no_repeat_ngram_size=None, verbose=False):
-    """
-    Implements a beam search, by repeatedly performing the `generate` and `filter` steps (starting
-    from the initial prompt) until either of the two stopping criteria are met:
-
+    """ Implements a beam search, by repeatedly performing the `generate` and `filter` steps
+        (starting from the initial prompt) until either of the two stopping criteria are met:
         (1) we've generated `max_new_tokens` tokens, or
         (2) we've generated `num_returns_sequences` terminating sequences.
-
-    To modularize this function, most of the actual complexity is in the Beams class,
-    in the `generate` and `filter` methods.
+    :param model: nn.Module, transformer model
+    :param tokenizer: transformers.tokenizer, tokenizer to use
+    :param prompt: str, input prompt
+    :param num_return_sequences: int, number of returned sampled sequences
+    :param num_beams: int, number of beams to keep during search
+    :param max_new_tokens: int, maximum number of tokens to generate per beam
+    :param no_repeat_ngram_size: int, Optional (default=None)
+                                 maximum allowed length of repeating n-grams
+    :param verbose: bool, if True, produce verbose output
+    :return: list, list of top `num_return_sequences` and according sampled sequences
     """
 
     assert num_return_sequences <= num_beams
