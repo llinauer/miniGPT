@@ -82,8 +82,23 @@ class Beams:
                 filtered version of self, containing all best `num_beams` which are also terminated.
                 i.e. the sum of lengths of these two should equal `num_beams`.
         """
-        pass
 
+        # Get the indices of top `num_beams` beams
+        top_beam_indices = self.logprob_sums.topk(k=num_beams, dim=0).indices.tolist()
+        # Get the indices of terminated sequences
+        new_tokens = self.tokens[:, -1]
+        terminated_indices = torch.nonzero(new_tokens == self.tokenizer.eos_token_id)
+    
+        # Get the indices of the `num_beams` best sequences (some terminated, some not terminated)
+        best_continuing = [i for i in top_beam_indices if i not in terminated_indices]
+        best_terminated = [i for i in top_beam_indices if i in terminated_indices]
+    
+        # Return the beam objects from these indices
+        best_beams_continuing = self.new_beams(self.logprob_sums[best_continuing],
+                                               self.tokens[best_continuing])
+        best_beams_terminated = self.new_beams(self.logprob_sums[best_terminated],
+                                               self.tokens[best_terminated])
+        return best_beams_continuing, best_beams_terminated
 
 
     def print(self, max_print_chars=80):

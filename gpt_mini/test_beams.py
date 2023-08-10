@@ -40,6 +40,27 @@ def test_beam_generation(model, tokenizer):
     new_beams.print()
     assert new_beams.logprobs_and_completions[9][1] == "The state of alaska is located"
 
+
+def test_beam_filtering(model, tokenizer):
+
+    logprob_sums = torch.tensor([-1.0, -2.0])
+    tokens = torch.tensor([
+        [19485, 13], # Stop .
+        [19485, tokenizer.eos_token_id] # Stop EOS
+    ])
+    
+    beams_with_eos = Beams(model, tokenizer, logprob_sums, tokens)
+    best_beams, early_terminations = beams_with_eos.filter(2)
+    
+    torch.testing.assert_close(best_beams.logprob_sums, logprob_sums[[0]])
+    torch.testing.assert_close(best_beams.tokens, tokens[[0]])
+    
+    assert early_terminations.logprobs_and_completions == [(-2.0, "Stop" + tokenizer.eos_token)]
+    
+    print("All tests for `filter` passed!")
+
+
+
 def load_gpt2_weights(model, reference_gpt2):
 
     transformer_weight_map = {}
@@ -86,6 +107,7 @@ def main():
     
 
     test_beam_generation(model, tokenizer)
+    test_beam_filtering(model, tokenizer)
 
 if __name__ == '__main__':
     main()
