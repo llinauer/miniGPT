@@ -75,15 +75,15 @@ class Beams:
             topk_logprobs, topk_token_idcs = self.get_topk_non_repeating(
                 logprobs, no_repeat_ngram_size, toks_per_beam)
 
-
-
+        # unpack and flatten the logprob sums
         logprob_sums_unpacked = einops.repeat(self.logprob_sums, "batch -> batch k",
                                               k=toks_per_beam).flatten()
+        # flatten the topk logprobs
         topk_logprobs_flattened = einops.rearrange(topk_logprobs, "batch k -> (batch k)")
- 
-
+        # sum the two to generate the new logprob sums
         new_logprob_sums = sum([logprob_sums_unpacked, topk_logprobs_flattened])
 
+        # generate new tokens
         new_tokens = torch.concat([einops.repeat(self.tokens, "batch seq -> (batch k) seq",
                                                  k=toks_per_beam),
                                    einops.rearrange(topk_token_idcs, "batch k -> (batch k) 1")
@@ -100,17 +100,17 @@ class Beams:
                  early_terminations: Beams, best `num_beams` which are also terminated.
         """
 
-        # Get the indices of top `num_beams` beams
+        # get the indices of top `num_beams` beams
         top_beam_indices = self.logprob_sums.topk(k=num_beams, dim=0).indices.tolist()
-        # Get the indices of terminated sequences
+        # get the indices of terminated sequences
         new_tokens = self.tokens[:, -1]
         terminated_indices = torch.nonzero(new_tokens == self.tokenizer.eos_token_id)
     
-        # Get the indices of the `num_beams` best sequences (some terminated, some not terminated)
+        # get the indices of the `num_beams` best sequences (some terminated, some not terminated)
         best_continuing = [i for i in top_beam_indices if i not in terminated_indices]
         best_terminated = [i for i in top_beam_indices if i in terminated_indices]
     
-        # Return the beam objects from these indices
+        # return the beam objects from these indices
         best_beams_continuing = self.new_beams(self.logprob_sums[best_continuing],
                                                self.tokens[best_continuing])
         best_beams_terminated = self.new_beams(self.logprob_sums[best_terminated],
@@ -131,28 +131,28 @@ class Beams:
         batch, seq_len = self.tokens.shape
         neg_inf = torch.tensor(-1.0e4)
     
-        # If completion isn't long enough for a repetition, or we have no restructions,
-        # just return topk
+        # if the number of non-repeatinng n-grams is None or too high, do nothing
         if (no_repeat_ngram_size is not None) and (seq_len > no_repeat_ngram_size-1):
-            # Otherwise, we need to check for ngram repetitions
-            # First, get the most recent `no_repeat_ngram_size-1` tokens
+ 
+            # check for ngram repetitions
+            # first, get the most recent `no_repeat_ngram_size-1` tokens
             last_ngram_prefix = self.tokens[:, seq_len - (no_repeat_ngram_size-1):]
-            # Next, find all the tokens we're not allowed to generate (by going iterating through
+
+            # next, find all the tokens we're not allowed to generate (by going iterating through
             # past ngrams and seeing if those ngram prefixes match the last one)
             for i in range(seq_len - (no_repeat_ngram_size-1)):
                 ngrams = self.tokens[:, i:i+no_repeat_ngram_size] # (batch, ngram)
                 ngrams_are_repeated = (ngrams[:, :-1] == last_ngram_prefix).all(-1) # (batch,)
                 ngram_end_tokens = ngrams[:, [-1]] # (batch, 1)
-                # Fill logprobs with neginf wherever the ngrams are repeated
+
+                # fill logprobs with neg_inf wherever the ngrams are repeated
                 logprobs[range(batch), ngram_end_tokens] = torch.where(
                     ngrams_are_repeated,
                     neg_inf,
                     logprobs[range(batch), ngram_end_tokens],
-            )
+                )
 
-        # Finally, get our actual tokens
         return logprobs.topk(k=k, dim=-1)
-
 
 
 
@@ -161,6 +161,8 @@ class Beams:
         :param max_print_chars: int, maximum number of characters to print for each sequence
         :return: None
         """
+
+        # nothing to print
         if len(self.tokens) == 0:
             return
 
@@ -170,7 +172,8 @@ class Beams:
         for logprob_sum, tokens in zip(self.logprob_sums, self.tokens):
             text = self.tokenizer.decode(tokens)
             if len(repr(text)) > max_print_chars:
-                text = text[:int(0.3 * max_print_chars)] + " ... " + text[-int(0.7 * max_print_chars):]
+                text = text[:int(0.3 * max_print_chars)] + " ... " + \
+                    text[-int(0.7 * max_print_chars):]
             print(f'logprob_sum: {logprob_sum:>8.3f}: {text}')
 
 
@@ -195,34 +198,35 @@ def beam_search(model, tokenizer, prompt, num_return_sequences, num_beams, max_n
     assert num_return_sequences <= num_beams
     model.eval()
 
-    # SOLUTION
     tokens = tokenizer.encode(prompt, return_tensors="pt")
 
-    # List for final beams to return (and early terminations)
+    # lList for final beams to return (and early terminations)
     final_logprobs_and_completions = []
-    # Keep track of all best beams after each step
+    # keep track of all best beams after each step
     best_beams = Beams(model, tokenizer, torch.tensor([0.0]), tokens)
 
+    # loop until we have max_new_tokens
     for n in tqdm(range(max_new_tokens)):
 
-        # Generation step
+        # generation step
         best_beams = best_beams.generate(toks_per_beam=num_beams,
                                          no_repeat_ngram_size=no_repeat_ngram_size)
 
-        # Filtering step
+        # filtering step
         best_beams, best_beams_terminated = best_beams.filter(num_beams=num_beams)
         final_logprobs_and_completions.extend(best_beams_terminated.logprobs_and_completions)
 
-        # Print output
+        # print output
         if verbose:
             best_beams.print()
 
-        # Check stopping condition
+        # check stopping condition
         if len(final_logprobs_and_completions) >= num_return_sequences:
             return final_logprobs_and_completions[:num_return_sequences]
 
     final_logprobs_and_completions.extend(best_beams.logprobs_and_completions)
     final_logprobs_and_completions = final_logprobs_and_completions[:num_return_sequences]
+
     return final_logprobs_and_completions
 
 
