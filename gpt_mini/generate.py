@@ -1,20 +1,20 @@
 """
-test.py 
+test.py
 
 Test the transformer model by letting it generate text
 """
 
 import argparse
+from pathlib import Path
 import torch
 import transformers
-from pathlib import Path
 import einops
 from tqdm import tqdm
 from model import MiniGPT
 
 class Beams:
     """Class to store beams during beam search."""
-    
+
     def __init__(self, model, tokenizer, logprob_sums, tokens):
         """ Constructor
         :param model: nn.Module, transformer model
@@ -105,11 +105,11 @@ class Beams:
         # get the indices of terminated sequences
         new_tokens = self.tokens[:, -1]
         terminated_indices = torch.nonzero(new_tokens == self.tokenizer.eos_token_id)
-    
+
         # get the indices of the `num_beams` best sequences (some terminated, some not terminated)
         best_continuing = [i for i in top_beam_indices if i not in terminated_indices]
         best_terminated = [i for i in top_beam_indices if i in terminated_indices]
-    
+
         # return the beam objects from these indices
         best_beams_continuing = self.new_beams(self.logprob_sums[best_continuing],
                                                self.tokens[best_continuing])
@@ -124,16 +124,16 @@ class Beams:
             repeating n-grams in it (e.g. the the the = repeating 3-gram)
         :param logprobs: torch.tensor(n_beams, vocab_size), logprobs of all beams
         :param no_repeat_ngram_size: int, the maximum allowed length of repeating n-grams
-        :param k: int, number of top logits to return for each beam 
-        :return: output of logprobs.topk, without repeating n-grams 
+        :param k: int, number of top logits to return for each beam
+        :return: output of logprobs.topk, without repeating n-grams
         """
 
         batch, seq_len = self.tokens.shape
         neg_inf = torch.tensor(-1.0e4)
-    
+
         # if the number of non-repeatinng n-grams is None or too high, do nothing
         if (no_repeat_ngram_size is not None) and (seq_len > no_repeat_ngram_size-1):
- 
+
             # check for ngram repetitions
             # first, get the most recent `no_repeat_ngram_size-1` tokens
             last_ngram_prefix = self.tokens[:, seq_len - (no_repeat_ngram_size-1):]
@@ -166,7 +166,6 @@ class Beams:
         if len(self.tokens) == 0:
             return
 
-        output = []
         print('Best completions')
 
         for logprob_sum, tokens in zip(self.logprob_sums, self.tokens):
@@ -206,7 +205,7 @@ def beam_search(model, tokenizer, prompt, num_return_sequences, num_beams, max_n
     best_beams = Beams(model, tokenizer, torch.tensor([0.0]), tokens)
 
     # loop until we have max_new_tokens
-    for n in tqdm(range(max_new_tokens)):
+    for _ in tqdm(range(max_new_tokens)):
 
         # generation step
         best_beams = best_beams.generate(toks_per_beam=num_beams,
@@ -257,12 +256,12 @@ def greedy_sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
 
     tokens = input_tokens.clone()
     model.eval()
-    for i in range(max_tokens):
+    for _ in range(max_tokens):
         # get logits of input_tokens
         logits = model(tokens)
         # use logits only for last token
         logits = logits[0, -1]
-    
+
         # sample next token from logits
         next_token = logits.softmax(dim=-1).argmax().item()
         next_token = torch.tensor([next_token]).unsqueeze(0)
@@ -277,7 +276,7 @@ def greedy_sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
 def main():
     """ Main function """
     args = parse_args()
-    
+
     # create tokenizer
     tokenizer = transformers.GPT2Tokenizer.from_pretrained('gpt2')
 
@@ -295,7 +294,7 @@ def main():
     # load weights
     weights_path = Path(args.weights)
     if not weights_path.exists() or not weights_path.is_file():
-        print(f'Could not load weights file: {weights_path}! Please make sure it exists and' 
+        print(f'Could not load weights file: {weights_path}! Please make sure it exists and'
                'is a correct weights file')
         return
 
@@ -304,7 +303,7 @@ def main():
     except Exception as e:
         print(e)
         return
-    
+
     # input prompt
     prompt_tokens = tokenizer.encode(args.prompt, return_tensors='pt')
 
