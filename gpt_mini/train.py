@@ -6,15 +6,14 @@ Train a MiniGPT model
 
 import argparse
 import torch
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import datasets
 import transformers
 from transformer_lens.utils import tokenize_and_concatenate
-from model import MiniGPT
 import numpy as np
 import tqdm
 import plotly.express as px
+from model import MiniGPT
 
 def get_log_probs(tokens, logits):
     """ Calculate the log probabilities for each token
@@ -142,12 +141,11 @@ class TransformerTrainer:
 
 
 
-def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, dataset_name):
+def plot_loss_and_accuracy(losses, accuracies, n_epochs, dataset_name):
     """ Plot the losses and accuracies of the training process
     :param losses: list, loss value of each timestep
     :param accuracy: list, accuracy evaluated after each epoch
     :param n_epochs: int, number of training epochs
-    :param steps_per_epoch: int, number of steps per epoch
     :param dataset_name: str, prefix of the jpg files
     :return: None
     """
@@ -159,11 +157,7 @@ def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, datase
         xaxis_title='Steps',
         yaxis_title='Loss',
         legend_title=None,
-        font=dict(
-            family="Courier New, monospace",
-            size=18,
-            color="black"
-        ),
+        font={'family': "Courier New, monospace", 'size': 18, 'color': "black"},
     )
 
     fig.write_image(f'{dataset_name}_loss_{n_epochs}.jpg')
@@ -175,11 +169,7 @@ def plot_loss_and_accuracy(losses, accuracies, n_epochs, steps_per_epoch, datase
         xaxis_title='Epochs',
         yaxis_title='Accuracy [%]',
         legend_title=None,
-        font=dict(
-            family="Courier New, monospace",
-            size=18,
-            color="black"
-        ),
+        font={'family': "Courier New, monospace", 'size': 18, 'color': "black"},
     )
 
     fig.write_image(f'{dataset_name}_accuracy_{n_epochs}.jpg')
@@ -208,8 +198,7 @@ def get_dataset(dataset_name):
         return datasets.load_dataset('NeelNanda/pile-10k', split='train').remove_columns('meta')
     elif dataset_name == 'wikipedia-de':
         return datasets.load_dataset('wikipedia', '20220301.de', split='train')
-    else:
-        return None
+    return None
 
 
 def main():
@@ -258,8 +247,7 @@ def main():
     torch.save(model.state_dict(), f'minigpt_{args.dataset}_{epochs}_epochs_weights')
 
     # plot loss and accuracy
-    plot_loss_and_accuracy(trainer.losses, trainer.accuracies, epochs, max_steps_per_epoch,
-                           f'{args.dataset}')
+    plot_loss_and_accuracy(trainer.losses, trainer.accuracies, epochs, f'{args.dataset}')
 
 if __name__ == '__main__':
     main()
