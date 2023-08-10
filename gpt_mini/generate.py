@@ -118,6 +118,54 @@ class Beams:
             print(f'logprob_sum: {logprob_sum:>8.3f}: {text}')
 
 
+def beam_search(model, tokenizer, prompt, num_return_sequences, num_beams, max_new_tokens,
+                no_repeat_ngram_size=None, verbose=False):
+    """
+    Implements a beam search, by repeatedly performing the `generate` and `filter` steps (starting
+    from the initial prompt) until either of the two stopping criteria are met:
+
+        (1) we've generated `max_new_tokens` tokens, or
+        (2) we've generated `num_returns_sequences` terminating sequences.
+
+    To modularize this function, most of the actual complexity is in the Beams class,
+    in the `generate` and `filter` methods.
+    """
+
+    assert num_return_sequences <= num_beams
+    model.eval()
+
+    # SOLUTION
+    tokens = tokenizer.encode(prompt, return_tensors="pt")
+
+    # List for final beams to return (and early terminations)
+    final_logprobs_and_completions = []
+    # Keep track of all best beams after each step
+    best_beams = Beams(model, tokenizer, torch.tensor([0.0]), tokens)
+
+    for n in tqdm(range(max_new_tokens)):
+
+        # Generation step
+        best_beams = best_beams.generate(toks_per_beam=num_beams,
+                                         no_repeat_ngram_size=no_repeat_ngram_size)
+
+        # Filtering step
+        best_beams, best_beams_terminated = best_beams.filter(num_beams=num_beams)
+        final_logprobs_and_completions.extend(best_beams_terminated.logprobs_and_completions)
+
+        # Print output
+        if verbose:
+            best_beams.print()
+
+        # Check stopping condition
+        if len(final_logprobs_and_completions) >= num_return_sequences:
+            return final_logprobs_and_completions[:num_return_sequences]
+
+    final_logprobs_and_completions.extend(best_beams.logprobs_and_completions)
+    final_logprobs_and_completions = final_logprobs_and_completions[:num_return_sequences]
+    return final_logprobs_and_completions
+
+
+
 def parse_args():
     """ Parse the command-line args
 
@@ -199,11 +247,13 @@ def main():
     if args.sampling_method == 'greedy':
         generated_tokens = greedy_sample(model, prompt_tokens, max_tokens=40,
                                          eos_token_id=tokenizer.eos_token_id)
-    elif args.sampling_method == 'beam':
-        generated_tokens = beam_search(model, prompt_tokens, beam_size=3, max_length=8)
+        generated_text = tokenizer.decode(generated_tokens)
 
-    # decode text
-    generated_text = tokenizer.decode(generated_tokens)
+    elif args.sampling_method == 'beam':
+        top_beams = beam_search(model, tokenizer, args.prompt, num_return_sequences=3,
+                                num_beams=40, max_new_tokens=60, no_repeat_ngram_size=None,
+                                verbose=False)
+        generated_text = top_beams[0][1]
 
     print(f'Input: {args.prompt}')
     print(f'Output: {generated_text}')
