@@ -229,21 +229,6 @@ def beam_search(model, tokenizer, prompt, num_return_sequences, num_beams, max_n
     return final_logprobs_and_completions
 
 
-
-def parse_args():
-    """ Parse the command-line args
-
-    :return: argparse.Namespace obj, the parsed arguments
-    """
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, help='Path to the weights file', required=True)
-    parser.add_argument('--sampling-method', type=str, choices=['greedy', 'beam'], required=True,
-                        help='Method to sample next tokens from the transformer output')
-    parser.add_argument('--prompt', type=str, help='Prompt to generate text with', required=True)
-    return parser.parse_args()
-
-
 def greedy_sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
     """ Produce output text with the model by greedily sampling the maxium logits
 
@@ -271,6 +256,20 @@ def greedy_sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
         if next_token == eos_token_id:
             break
     return tokens[0]
+
+
+def parse_args():
+    """ Parse the command-line args
+
+    :return: argparse.Namespace obj, the parsed arguments
+    """
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weights', type=str, help='Path to the weights file', required=True)
+    parser.add_argument('--sampling-method', type=str, choices=['greedy', 'beam'], required=True,
+                        help='Method to sample next tokens from the transformer output')
+    parser.add_argument('--prompt', type=str, help='Prompt to generate text with', required=True)
+    return parser.parse_args()
 
 
 def main():
