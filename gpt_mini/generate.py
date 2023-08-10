@@ -9,6 +9,7 @@ from pathlib import Path
 import torch
 import transformers
 import einops
+from transformer_lens import EasyTransformer
 from tqdm import tqdm
 from model import MiniGPT
 
@@ -257,6 +258,45 @@ def greedy_sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
             break
     return tokens[0]
 
+def load_gpt2_weights(model, reference_gpt2):
+    """ Load the fully trained gpt2 weights
+    :param model: nn.Module, transformer model
+    :param reference.gpt2: transformer_lense.HookedTransformer, fully trained gpt2 transformer
+    :return: nn.Module, model with loaded weights
+    """
+
+    transformer_weight_map = {}
+    for weight_name in reference_gpt2.state_dict().keys():
+
+        new_weight = weight_name
+
+        # ln1 -> attention_ln
+        new_weight = new_weight.replace('ln1.w', 'attention_ln.gamma')
+        new_weight = new_weight.replace('ln1.b', 'attention_ln.beta')
+        # ln2 -> mlp_ln
+        new_weight = new_weight.replace('ln2.w', 'mlp_ln.gamma')
+        new_weight = new_weight.replace('ln2.b', 'mlp_ln.beta')
+        # ln_final.w, ln_final.b -> ln_final.gamma, ln_final.beta
+        new_weight = new_weight.replace('ln_final.w', 'ln_final.gamma')
+        new_weight = new_weight.replace('ln_final.b', 'ln_final.beta')
+        # attn -> attention_layer
+        new_weight = new_weight.replace('attn', 'attention_layer')
+        # W_in, b_in -> W_hidden, b_hidden
+        new_weight = new_weight.replace('W_in', 'W_hidden').replace('b_in', 'b_hidden')
+
+        transformer_weight_map[weight_name] = new_weight
+
+    # map weights
+    mapped_weights = {}
+    for key in reference_gpt2.state_dict().keys():
+        if not transformer_weight_map.get(key, None):
+            mapped_weights[key] = reference_gpt2.state_dict()[key]
+        else:
+            mapped_weights[transformer_weight_map[key]] = reference_gpt2.state_dict()[key]
+
+    model.load_state_dict(mapped_weights, strict=False)
+    return model
+
 
 def parse_args():
     """ Parse the command-line args
@@ -265,7 +305,9 @@ def parse_args():
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, help='Path to the weights file', required=True)
+    parser.add_argument('--weights', type=str, help='Path to the weights file')
+    parser.add_argument('--use-gpt2-weights', action='store_true',
+                        help='If given, use the weights from a fully trained GPT2 instance')
     parser.add_argument('--sampling-method', type=str, choices=['greedy', 'beam'], required=True,
                         help='Method to sample next tokens from the transformer output')
     parser.add_argument('--prompt', type=str, help='Prompt to generate text with', required=True)
@@ -287,21 +329,29 @@ def main():
     n_heads = 12
     d_head = 64
 
-    # create model
-    model = MiniGPT(n_layers, d_vocab, context_length, d_model, n_heads, d_head)
 
     # load weights
-    weights_path = Path(args.weights)
-    if not weights_path.exists() or not weights_path.is_file():
-        print(f'Could not load weights file: {weights_path}! Please make sure it exists and'
-               'is a correct weights file')
-        return
 
-    try:
-        model.load_state_dict(torch.load(weights_path), strict=True)
-    except Exception as e:
-        print(e)
-        return
+    # if --use-gpt2-weights is given
+    if args.use_gpt2_weights:
+        reference_gpt2 = EasyTransformer.from_pretrained(
+            'gpt2-small', fold_ln=False, center_unembed=False, center_writing_weights=False)
+        model = MiniGPT(12, reference_gpt2.tokenizer.vocab_size, 1024, 768, 12, 64)
+        model = load_gpt2_weights(model, reference_gpt2)
+    else:
+        # create model
+        model = MiniGPT(n_layers, d_vocab, context_length, d_model, n_heads, d_head)
+        weights_path = Path(args.weights)
+        if not weights_path.exists() or not weights_path.is_file():
+            print(f'Could not load weights file: {weights_path}! Please make sure it exists and'
+                   'is a correct weights file')
+            return
+    
+        try:
+            model.load_state_dict(torch.load(weights_path), strict=True)
+        except Exception as e:
+            print(e)
+            return
 
     # input prompt
     prompt_tokens = tokenizer.encode(args.prompt, return_tensors='pt')
