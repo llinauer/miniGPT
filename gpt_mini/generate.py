@@ -53,8 +53,15 @@ class Beams:
         logits = self.model(self.tokens)[:, -1, :]
         logprobs = logits.log_softmax(dim=-1)
 
-        # get the top k logprobs and their indices
-        topk_logprobs, topk_token_idcs = logprobs.topk(k=toks_per_beam)
+        # get the top k logprobs and their indices; if no_repeat_ngram_size is given,
+        # use get_topk_non_repeating instead of topk
+        if no_repeat_ngram_size is None:
+            topk_logprobs, topk_token_idcs = logprobs.topk(k=toks_per_beam)
+        else:
+            topk_logprobs, topk_token_idcs = self.get_topk_non_repeating(
+                logprobs, no_repeat_ngram_size, toks_per_beam)
+
+
 
         logprob_sums_unpacked = einops.repeat(self.logprob_sums, "batch -> batch k",
                                               k=toks_per_beam).flatten()
@@ -99,6 +106,50 @@ class Beams:
         best_beams_terminated = self.new_beams(self.logprob_sums[best_terminated],
                                                self.tokens[best_terminated])
         return best_beams_continuing, best_beams_terminated
+
+
+
+    def get_topk_non_repeating(self, logprobs, no_repeat_ngram_size, k):
+        """
+        logprobs: 
+            tensor of the log-probs for the next token
+        no_repeat_ngram_size:
+            size of ngram to avoid repeating
+        k:
+            number of top logits to return, for each beam in our collection
+    
+        Returns:
+            equivalent to the output of `logprobs.topk(dim=-1)`, but makes sure
+            that no returned tokens would produce an ngram of size `no_repeat_ngram_size`
+            which has already appeared in `self.tokens`.
+        """
+
+        batch, seq_len = self.tokens.shape
+        neg_inf = torch.tensor(-1.0e4)
+    
+        # If completion isn't long enough for a repetition, or we have no restructions,
+        # just return topk
+        if (no_repeat_ngram_size is not None) and (seq_len > no_repeat_ngram_size-1):
+            # Otherwise, we need to check for ngram repetitions
+            # First, get the most recent `no_repeat_ngram_size-1` tokens
+            last_ngram_prefix = self.tokens[:, seq_len - (no_repeat_ngram_size-1):]
+            # Next, find all the tokens we're not allowed to generate (by going iterating through
+            # past ngrams and seeing if those ngram prefixes match the last one)
+            for i in range(seq_len - (no_repeat_ngram_size-1)):
+                ngrams = self.tokens[:, i:i+no_repeat_ngram_size] # (batch, ngram)
+                ngrams_are_repeated = (ngrams[:, :-1] == last_ngram_prefix).all(-1) # (batch,)
+                ngram_end_tokens = ngrams[:, [-1]] # (batch, 1)
+                # Fill logprobs with neginf wherever the ngrams are repeated
+                logprobs[range(batch), ngram_end_tokens] = torch.where(
+                    ngrams_are_repeated,
+                    neg_inf,
+                    logprobs[range(batch), ngram_end_tokens],
+            )
+
+        # Finally, get our actual tokens
+        return logprobs.topk(k=k, dim=-1)
+
+
 
 
     def print(self, max_print_chars=80):
@@ -251,7 +302,7 @@ def main():
 
     elif args.sampling_method == 'beam':
         top_beams = beam_search(model, tokenizer, args.prompt, num_return_sequences=3,
-                                num_beams=40, max_new_tokens=60, no_repeat_ngram_size=None,
+                                num_beams=40, max_new_tokens=60, no_repeat_ngram_size=2,
                                 verbose=False)
         generated_text = top_beams[0][1]
 
