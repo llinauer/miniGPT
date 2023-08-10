@@ -1,3 +1,3 @@
 [MESSAGE CONTROL]
-good-names=W_E,W_K,W_Q,W_V,W_hidden,b_K,b_Q,b_V,W_O,b_O,W_U,b_U,W_pos,W_out
+good-names=W_E,W_K,W_Q,W_V,W_hidden,b_K,b_Q,b_V,W_O,b_O,W_U,b_U,W_pos,W_out,e,i,n,k
 disable=too-few-public-methods,no-member,too-many-arguments,too-many-instance-attributes
