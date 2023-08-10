@@ -6,9 +6,9 @@ Test if all the model layers output the correct shape
 """
 
 import torch
+from transformer_lens import EasyTransformer
 from model import LayerNorm, Embedding, Unembedding, PositionalEmbedding, Attention, MLP
 from model import TransformerBlock, MiniGPT
-from transformer_lens import EasyTransformer
 
 
 def rand_float_test(layer, input_shape, expected_shape):
@@ -62,12 +62,18 @@ def trained_gpt2_test(layer, gpt2_layer, weight_map, layer_input):
 
     layer.load_state_dict(mapped_weights, strict=False)
     output = layer(layer_input)
-    try: reference_output = gpt2_layer(layer_input)
-    except: reference_output = gpt2_layer(layer_input, layer_input, layer_input)
+    try:
+        reference_output = gpt2_layer(layer_input)
+    except:
+        reference_output = gpt2_layer(layer_input, layer_input, layer_input)
     comparison = torch.isclose(output, reference_output, atol=1e-4, rtol=1e-3)
     print(f'{comparison.sum()/comparison.numel():.2%} of the values are correct')
 
 def test_model_shapes():
+    """ Test the shapes of each model layer
+    :return: None
+    """
+
     print('Testing output shapes of MiniGPT model')
     print('-----')
     print('Test LayerNorm layer')
@@ -89,6 +95,11 @@ def test_model_shapes():
     print('-----')
 
 def test_model_outputs():
+    """ Test the model outputs. Load gpt2 weights, and check if the model produces the
+        same output as a fully-trained gpt2 instance
+    :return: None
+    """
+
     print('Testing output values of MiniGPT model')
     print('-----')
 
@@ -102,7 +113,7 @@ def test_model_outputs():
     # tokenize the input
     input_tokens = reference_gpt2.to_tokens(input_str)
     # pass the tokens through the trained model
-    logits, cache = reference_gpt2.run_with_cache(input_tokens)
+    _, cache = reference_gpt2.run_with_cache(input_tokens)
 
     print('Test LayerNorm layer')
     trained_gpt2_test(LayerNorm(768), reference_gpt2.ln_final, {'w': 'gamma', 'b': 'beta'},
