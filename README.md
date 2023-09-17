@@ -19,20 +19,18 @@ and then run
 
     pip install -r requirements.txt
 
-## Basics
+## Transformer basics
 
-### Transformers
-
-The Transformer is a neural network architecture introduced by Vaswani et al in the paper
+The Transformer is a neural network architecture introduced by Vaswani et al. in the paper
 "Attention is all you need" (https://arxiv.org/abs/1706.03762).
 Since then, it became hugely popular and was used in many many many applications
 for language modeling, most notably the GPT models. 
 The GPT (Generative Pre-Trained) transformer model was introduced by OpenAI in 2018 (https://openai.com/research/language-unsupervised).
 As of now (2023), ChatGPT, an application that uses a GPT-like model to generate language is so incredibly 
-wide-known, even representatives of the austrian government know what it is.
+wide-known, even representatives of the austrian government have heard of it.
 And representatives of the austrian government are not known to be particularly tech-savvy.
 
-There are some differences between specific transformer architectures, but I will focus on the GPT-style
+There are different transformer architectures out there, but I will focus on the GPT-style
 transformer here.
 On a very high level, the transformer architecture looks like this:
 
@@ -61,4 +59,31 @@ possible next tokens in a sequence.
 
 The architecture is specified in gpt_mini/model.py You can go check out the details there.
 
+## Training a Transformer
+
+On a high-level, training a transformer seems simple.
+You basically take some text (any text will do), pack it up into batches and feed it 
+through the model. To understand what actually comes out of the transformer, we need to look again at the
+transformer architecture, but now in a little more detail.
+
+The model has an internal vocabulary. This is the list of words that the model knows of
+and that it can work with. Not all entries in the vocabulary need to be real words, there can also
+be parts of words or single letters. The vocabulary I use here is from Neels transformer lens 
+repo. It has 50257 entries.
+
+Each word that is fed to the transformer model, is converted into its corresponding index
+from the vocabulary first, these indices are also called tokens. Note, that there is not necessarily a 1:1 conversion
+between words and tokens. Some words may be split into two or more tokens.
+These tokens are passed through the model and at the other end, we get a bunch of number, logits, as they
+are called.
+For each input token, we get 50257 logits, one for each entry in the vocabulary.
+They are akin to a probability distribution over the whole vocabulary, and in fact, you 
+can create a probability distribution out of them by applying a softmax function.
+
+You can see this illustratted in the following image:
+
+![Transformer output](plots/transformer_io.jpg)
+
+So, in words, a transformer "transforms" each input word (token, to be precise)
+into a distribution over all words in the vocabulary.
 
