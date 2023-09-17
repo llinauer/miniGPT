@@ -87,3 +87,27 @@ You can see this illustratted in the following image:
 So, in words, a transformer "transforms" each input word (token, to be precise)
 into a distribution over all words in the vocabulary.
 
+The training process now looks like follows:
+
+For each word in every sentence that we feed the model, it should correctly predict
+the following word. So, for every word that we pass through the model, we take the logit
+(which is a measure of probability) that corresponds to the following word and increase it.
+The next time, this specific word will be passed through the model, the word that followed in
+the training sentence, will get a higher probability.
+So, we push the transformer to be a next-word predictor, for sentences that it
+saw during training.
+
+The training process is illustrated here:
+
+![Transformer training](plots/transformer_training.jpg)
+
+Technically, this is done with Stochastic Gradient Descent, and it may take many thousands
+of iterations over the training data, until the model can predict next words with
+a high degree of certainty.
+
+I used two datasets for training, the Pile-10k dataset from Neel (https://huggingface.co/datasets/NeelNanda/pile-10k/viewer/NeelNanda--pile-10k/train)
+which includes the first 10k entries of the Pile (https://pile.eleuther.ai/) dataset and is a small but convenient
+dataset for a quick training session.
+
+The other one was the whole of the german Wikipedia (https://huggingface.co/datasets/wikipedia), which
+is quite a lot bigger.
