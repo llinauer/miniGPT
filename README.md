@@ -111,3 +111,24 @@ dataset for a quick training session.
 
 The other one was the whole of the german Wikipedia (https://huggingface.co/datasets/wikipedia), which
 is quite a lot bigger.
+
+For the transformer architecture, I decided to go for 6 transformer layers (= 6 x Attention + MLP layer),
+with 6 attention heads and a head dimension of 64, a model size (= size of the residual stream) of 256, a context length (= max. number of tokens that can fit
+through the model at once) of 1024.
+This is quite a small model. A very small model, actually. In fact, it has only around 34 million parameters (a parameter is 
+a weight, a bias or any kind of floating point number that the model can adapt during training) whereas 
+the smallest version of GPT2, gpt2-small, has around 163 million parameters.
+I chose this model, because it was the largest that could fit into the memory of the one GPU I had 
+at my disposal. For training larger models, you need to employ some fancier tricks e.g. data parallelism or using multiple GPUs,
+than I did here.
+
+## Generating language
+
+Now for the fun part, using the transformer as a language model.
+To actually generate text (e.g. as ChatGPT does), we can use the transformer in an autoregressive way.
+What the hell is autoregressive? It basically means, that you will feed the output of the model back as an input in a loop, creating
+new text each time.
+Here is an image that illustrates this process.
+
+
+
