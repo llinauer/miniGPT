@@ -34,7 +34,7 @@ There are different transformer architectures out there, but I will focus on the
 transformer here.
 On a very high level, the transformer architecture looks like this:
 
-![Transformer Architecture](transformer_architecture.jpg)
+![Transformer Architecture](plots/transformer_architecture.jpg)
 
 First, an embedding layer translates text input to floating-point numbers. These embeddings are 
 the transformer-internal representation of the text. The output of the embedding layer is called residual
