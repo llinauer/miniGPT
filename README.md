@@ -130,5 +130,62 @@ What the hell is autoregressive? It basically means, that you will feed the outp
 new text each time.
 Here is an image that illustrates this process.
 
+![Transformer training](plots/autoregression.jpg)
+
+At each step of the process, you feed text through the transformer, sample a word from the output, append
+it to your text and feed back into the transformer.
+In this way, you create language, one word at a time.
+Sounds easy, right? But before we can actually do this ourselves, we need to talk about
+one more thing. The way we sample from the transformer outputs.
+As you already know, the transformer outputs a number (a logit) for each word in the vocabulary.
+Since this logit is a measure of the probability of the respective word occurring, we can just take
+the largest logit, fetch the corresponding word from the vocabulary and use it as the next word in the
+text. This actually works and is rather easy to implement, but does not usually produce the most
+interesting texts. But we can also do something more sophisticated.
+Using only the word with the highest probability (logit) at each stage is kind of a narrow-sighted approach.
+This method really only looks one word ahead. But language, as you know, is far more complex than that.
+Words from the beginning of a sentence can be referenced by words from the end of a sentence, e.g. as in: 
+
+"The sausage, albeit looking kind of weird, tasted good."
+
+Beam-search, another sampling method, is designed to capture the natural flow of language more closely.
+Here, we don't just look at the highest probability word at each step, but the highest probability of a longer sequence of word.
+
+![Transformer training](plots/beam_search.jpg)
+
+At each step, we don't just look at the highest probability word, but the n (say, 3) words
+with the highest probability. We append each of them to the input and store them as 
+separate alternatives (beams). Then we create another set of n output words for each of the beams we just stored.
+In this way, we generate a number of beams. The highest probability beam is then just the beam
+which has the highest sum of probabilities for each word.
+
+Beam search tends to work much better, generating much more natural texts than the "highest-probability only" approach (also called greedy-sampling).
+However, it is also much more resource-intensive, since you have to store each chain of possible words (beam) until
+you decide which one is the one to go.
+
+There are more sampling methods than these two (e.g. sampling with temperature), but they are of no concern here.
+Alright, then let's actually generate text, shall we?
+
+To generate text yourself, you will need a set of weights of a trained transformer model.
+If you don't want to actually run the training step, I provided you with the weights of a fully
+trained gpt2-small model, which you can use for playing around.
+
+You can run
+
+    python3 gpt_mini/generate.py --weights <path_to_weights_file> \
+        --sampling-method <beam or greedy> \
+        --prompt "Your text here"
+
+When you want to use the gpt2-small weights, run instead of --weights with --use-gpt2
+
+## TEST
+
+Now, let's see how good my trained transformer models are at generating language.
+I will compare the 6 layer models trained on the Pile-10k and german Wikipedia datasets respectively,
+with the full-fledged gpt2-small model.
+
+
+
+
 
 
