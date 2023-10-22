@@ -348,7 +348,10 @@ def main():
             return
     
         try:
-            model.load_state_dict(torch.load(weights_path), strict=True)
+            if torch.cuda.is_available():
+                model.load_state_dict(torch.load(weights_path), strict=True)
+            else:
+                model.load_state_dict(torch.load(weights_path, map_location=torch.device('cpu')))
         except Exception as e:
             print(e)
             return
