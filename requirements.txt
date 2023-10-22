@@ -22,6 +22,8 @@ pip==23.1.2
 setuptools==67.8.0
 sympy==1.12
 torch==2.0.1
+transformers==4.34.1
+transformer-lens==1.8.1
 triton==2.0.0
 typing_extensions==4.6.3
 wheel==0.38.4
