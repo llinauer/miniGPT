@@ -13,6 +13,7 @@ from transformer_lens import EasyTransformer
 from tqdm import tqdm
 from model import MiniGPT
 
+
 class Beams:
     """Class to store beams during beam search."""
 
@@ -29,7 +30,6 @@ class Beams:
         self.tokenizer = tokenizer
         self. logprob_sums = logprob_sums
         self.tokens = tokens
-
 
     def new_beams(self, logprob_sums, tokens):
         """Creates a new Beams object with updated logprob_sums and tokens
@@ -53,7 +53,6 @@ class Beams:
         """
         return [(logprob_sum.item(), self.tokenizer.decode(tokens)) for
                 (logprob_sum, tokens) in zip(self.logprob_sums, self.tokens)]
-
 
     def generate(self, toks_per_beam, no_repeat_ngram_size=None):
         """ Starting from the current set of beams, returns a new
@@ -93,7 +92,6 @@ class Beams:
         return self.new_beams(new_logprob_sums, new_tokens)
 
 
-
     def filter(self, num_beams):
         """ Filter the top `num_beams`
         :param num_beams: int, how many beams to keep
@@ -117,7 +115,6 @@ class Beams:
         best_beams_terminated = self.new_beams(self.logprob_sums[best_terminated],
                                                self.tokens[best_terminated])
         return best_beams_continuing, best_beams_terminated
-
 
 
     def get_topk_non_repeating(self, logprobs, no_repeat_ngram_size, k):
@@ -154,7 +151,6 @@ class Beams:
                 )
 
         return logprobs.topk(k=k, dim=-1)
-
 
 
     def print(self, max_print_chars=80):
@@ -258,6 +254,7 @@ def greedy_sample(model, input_tokens, max_tokens=40, eos_token_id=50256):
             break
     return tokens[0]
 
+
 def load_gpt2_weights(model, reference_gpt2):
     """ Load the fully trained gpt2 weights
     :param model: nn.Module, transformer model
@@ -306,7 +303,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, help='Path to the weights file')
-    parser.add_argument('--use-gpt2-weights', action='store_true',
+    parser.add_argument('--use-gpt2-small', action='store_true',
                         help='If given, use the weights from a fully trained GPT2 instance')
     parser.add_argument('--sampling-method', type=str, choices=['greedy', 'beam'], required=True,
                         help='Method to sample next tokens from the transformer output')
@@ -329,11 +326,9 @@ def main():
     n_heads = 12
     d_head = 64
 
-
     # load weights
-
-    # if --use-gpt2-weights is given
-    if args.use_gpt2_weights:
+    # if --use-gpt2-small is given
+    if args.use_gpt2_small:
         reference_gpt2 = EasyTransformer.from_pretrained(
             'gpt2-small', fold_ln=False, center_unembed=False, center_writing_weights=False)
         model = MiniGPT(12, reference_gpt2.tokenizer.vocab_size, 1024, 768, 12, 64)
@@ -373,6 +368,7 @@ def main():
 
     print(f'Input: {args.prompt}')
     print(f'Output: {generated_text}')
+
 
 if __name__ == '__main__':
     main()
