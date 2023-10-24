@@ -180,12 +180,76 @@ When you want to use the gpt2-small weights, run instead of --weights with --use
 
 ## TEST
 
-Now, let's see how good my trained transformer models are at generating language.
-I will compare the 6 layer models trained on the Pile-10k and german Wikipedia datasets respectively,
-with the full-fledged gpt2-small model.
+Now for the fun part, actually generating language with a language model!
+I won't do any systematic tests here, just play around with some prompts and see what I can get out.
+
+Okay, let's start with an easy one. Say, I always dreamt of going to Italy, but something unexpected
+always prevented me from doing so. Models, what do you have to say 'bout that?
+
+    Whenever I want to go to Italy, ...
+
+
+| **Model/Train set** | **Sampling method** | **Text**                                                                                                                                                                                    |
+|---------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| miniGPT / Pile10k   | Greedy              | Whenever I want to go to Italy, I would be a Christy, but I would be a visiting the Mormons would be the Mormons would be the Mormons, and I would like to the publisher.                   |
+| miniGPT / Pile10k   | Beam                | Whenever I want to go to Italy, but I would I was going on the next year.I would be sure that if I did this would you could I do you would it was the first, I could you had the only woul  |
+| gpt2-small          | Greedy              | Whenever I want to go to Italy, I have to go to Italy. I have to go to Italy. I have to go to Italy. I have to go to Italy. I have to go to Italy. I have to go to                          |
+| gpt2-small          | Beam                |                                                                                                                                                                                             |
 
 
 
+Okay, maybe they need some more material to work with. Let's be more specific:
+
+    n recent years, it was not possible to get an affordable housing credit without ... 
 
 
+| **Model/Train set** | **Sampling method** | **Text**                                                                                                                                                                                                                     |
+|---------------------|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| miniGPT / Pile10k   | Greedy              | In recent years, it was not possible to get an affordable housing credit without the development of the development of the development of the development of the development of the development                              |
+| miniGPT / Pile10k   | Beam                | In recent years, it was not possible to get an affordable housing credit without paying dividends. “It’s not a lot of money,” he said. “I am going to be paying for money. I am very good,                                   |
+| gpt2-small          | Greedy              | In recent years, it was not possible to get an affordable housing credit without a mortgage. "We're seeing a lot of people who are struggling to find a place to live," said Mr. Kowalski. "We're seeing a lot of people who |
+| gpt2-small          | Beam                |                                                                                                                                                                                                                              |
+
+
+Also, maybe finance is not their expertise. How about movies?
+
+    In my opinion, the best movie starring Tom Cruise is ...
+
+| **Model/Train set** | **Sampling method** | **Text**                                                                                                                                                                                                                                           |
+|---------------------|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| miniGPT / Pile10k   | Greedy              | In my opinion, the best movie starring Tom Cruise is the character of the young Shakespeare, the young Shakespeare, the Virgin, the Virgin, the Bruce, the Bruce, the Bruce, the two of the Yorkshire, the Yorkshire, the Yorkshire, the Yorkshire |
+| miniGPT / Pile10k   | Beam                | In my opinion, the best movie starring Tom Cruise is one of the actors. White House (  GOOGLE MAP ) ; www.org.uk; adult/child £5.50/free;  h10am-5                                                                                                 |
+| gpt2-small          | Greedy              | In my opinion, the best movie starring Tom Cruise is the one that has the most impact on the world. It's a movie that has a lot of potential. It's a movie that has a lot of potential. It's a movie that has a                                    |
+| gpt2-small          | Beam                |                                                                                                                                                                                                                                                    |
+
+
+Nah, maybe not movies.
+...
+
+Okay, one more. How about geopolitics?
+
+    The collapse of the Soviet Union was the ...
+
+| **Model/Train set** | **Sampling method** | **Text**                                                                                                                                                                                                 |
+|---------------------|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| miniGPT / Pile10k   | Greedy              | The collapse of the Soviet Union was the baptism of the unit of the unit of the unit of the unit ...                                                                                                     |
+| miniGPT / Pile10k   | Beam                | The collapse of the Soviet Union was the corporation. “It is a Communist Party,” he said, “I don’t know that there are a lot of people who are in the United States.                                     |
+| gpt2-small          | Greedy              | The collapse of the Soviet Union was the result of a series of events that were not only the result of the collapse of the Soviet Union, but also the result of the collapse of the Soviet Union itself. |
+| gpt2-small          | Beam                |                                                                                                                                                                                                          |
+
+
+
+### Honorable mentions.
+
+
+
+Well, to be honest the results are a little disappointing.
+Event gpt2-small more often than not, produces rather lame answers.
+However, getting good results was never the goal in the first place. Creating a language model
+from scratch was an incredibly insightful (and also often very frustrating) experience and I learned a ton while doing
+it. So, I guess there is nothing left to say?
+
+Model,
+
+    
 
