@@ -362,7 +362,7 @@ def main():
 
     elif args.sampling_method == 'beam':
         top_beams = beam_search(model, tokenizer, args.prompt, num_return_sequences=3,
-                                num_beams=10, max_new_tokens=40, no_repeat_ngram_size=2,
+                                num_beams=10, max_new_tokens=20, no_repeat_ngram_size=2,
                                 verbose=False)
         generated_text = top_beams[0][1]
 

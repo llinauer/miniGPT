@@ -3,11 +3,11 @@ MiniGPT - A small language model
 
 This repository is an attempt on my part, to better understand transformer models, 
 especially of the GPT flavour.
-It is heavily inspired by (not to say stolen from) Neel Nandas' "Transformers from Scratch" tutorial, which can be found 
+It is heavily inspired by Neel Nandas' "Transformers from Scratch" tutorial, which can be found 
 on his website https://www.neelnanda.io/.
 A remake of this tutorial can be found here: https://arena-ch1-transformers.streamlit.app/[1.1]_Transformer_from_Scratch
-
-I take no credit for the ideas presented here.
+So, I would like to thank Neel and the ARENA people for creating these awesome resources and you should definitely check
+them out.
 
 ## Pre-requisites
 
@@ -189,18 +189,17 @@ always prevented me from doing so. Models, what do you have to say 'bout that?
     Whenever I want to go to Italy, ...
 
 
-| **Model/Train set** | **Sampling method** | **Text**                                                                                                                                                                                    |
-|---------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| miniGPT / Pile10k   | Greedy              | Whenever I want to go to Italy, I would be a Christy, but I would be a visiting the Mormons would be the Mormons would be the Mormons, and I would like to the publisher.                   |
-| miniGPT / Pile10k   | Beam                | Whenever I want to go to Italy, but I would I was going on the next year.I would be sure that if I did this would you could I do you would it was the first, I could you had the only woul  |
-| gpt2-small          | Greedy              | Whenever I want to go to Italy, I have to go to Italy. I have to go to Italy. I have to go to Italy. I have to go to Italy. I have to go to Italy. I have to go to                          |
-| gpt2-small          | Beam                |                                                                                                                                                                                             |
+| **Model/Train set** | **Sampling method** | **Text**                                                                                                                                                                                   |
+|---------------------|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| miniGPT / Pile10k   | Greedy              | Whenever I want to go to Italy, I would be a Christy, but I would be a visiting the Mormons would be the Mormons would be the Mormons, and I would like to the publisher.                  |
+| miniGPT / Pile10k   | Beam                | Whenever I want to go to Italy, but I would I was going on the next year.I would be sure that if I did this would you could I do you would it was the first, I could you had the only woul |
+| gpt2-small          | Greedy              | Whenever I want to go to Italy, I have to go to Italy. I have to go to Italy. I have to go to Italy. I have to go to Italy. I have to go to Italy. I have to go to                         |
+| gpt2-small          | Beam                | Whenever I want to go to Italy, I don't know if I'll be able to do it," he said.                                                                                                           |
 
+Okay, so far so good, the answers range from absolute gibberish to something resembling a sentence.
+Maybe they need some more material to work with. Let's be more specific:
 
-
-Okay, maybe they need some more material to work with. Let's be more specific:
-
-    n recent years, it was not possible to get an affordable housing credit without ... 
+    In recent years, it was not possible to get an affordable housing credit without ... 
 
 
 | **Model/Train set** | **Sampling method** | **Text**                                                                                                                                                                                                                     |
@@ -208,23 +207,24 @@ Okay, maybe they need some more material to work with. Let's be more specific:
 | miniGPT / Pile10k   | Greedy              | In recent years, it was not possible to get an affordable housing credit without the development of the development of the development of the development of the development of the development                              |
 | miniGPT / Pile10k   | Beam                | In recent years, it was not possible to get an affordable housing credit without paying dividends. “It’s not a lot of money,” he said. “I am going to be paying for money. I am very good,                                   |
 | gpt2-small          | Greedy              | In recent years, it was not possible to get an affordable housing credit without a mortgage. "We're seeing a lot of people who are struggling to find a place to live," said Mr. Kowalski. "We're seeing a lot of people who |
-| gpt2-small          | Beam                |                                                                                                                                                                                                                              |
+| gpt2-small          | Beam                | In recent years, it was not possible to get an affordable housing credit without having to buy a home in the city.                                                                                                           |
 
+Also, quite okay. It is no surprise that gpt2-small produces much more meaningful sentences than my own model.
+But with beam search, even my miniGPT can come up with sentences that are at least sentences.
+With greedy sampling however, my model is prone to repeat itself, whereas gpt2-small handles greedy sampling quite well.
 
-Also, maybe finance is not their expertise. How about movies?
+Okay, but maybe finance is not their expertise. How about movies?
 
     In my opinion, the best movie starring Tom Cruise is ...
 
-| **Model/Train set** | **Sampling method** | **Text**                                                                                                                                                                                                                                           |
-|---------------------|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| miniGPT / Pile10k   | Greedy              | In my opinion, the best movie starring Tom Cruise is the character of the young Shakespeare, the young Shakespeare, the Virgin, the Virgin, the Bruce, the Bruce, the Bruce, the two of the Yorkshire, the Yorkshire, the Yorkshire, the Yorkshire |
-| miniGPT / Pile10k   | Beam                | In my opinion, the best movie starring Tom Cruise is one of the actors. White House (  GOOGLE MAP ) ; www.org.uk; adult/child £5.50/free;  h10am-5                                                                                                 |
-| gpt2-small          | Greedy              | In my opinion, the best movie starring Tom Cruise is the one that has the most impact on the world. It's a movie that has a lot of potential. It's a movie that has a lot of potential. It's a movie that has a                                    |
-| gpt2-small          | Beam                |                                                                                                                                                                                                                                                    |
+| **Model/Train set** | **Sampling method** | **Text**                                                                                                                                                                                                                                            |
+|---------------------|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| miniGPT / Pile10k   | Greedy              | In my opinion, the best movie starring Tom Cruise is the character of the young Shakespeare, the young Shakespeare, the Virgin, the Virgin, the Bruce, the Bruce, the Bruce, the two of the Yorkshire, the Yorkshire, the Yorkshire, the Yorkshire  |
+| miniGPT / Pile10k   | Beam                | In my opinion, the best movie starring Tom Cruise is one of the actors. White House (  GOOGLE MAP ) ; www.org.uk; adult/child £5.50/free;  h10am-5                                                                                                  |
+| gpt2-small          | Greedy              | In my opinion, the best movie starring Tom Cruise is the one that has the most impact on the world. It's a movie that has a lot of potential. It's a movie that has a lot of potential. It's a movie that has a                                     |
+| gpt2-small          | Beam                | In my opinion, the best movie starring Tom Cruise is The Dark Knight Rises. It's a great movie, but it's not a good movie.                                                                                                                          |
 
-
-Nah, maybe not movies.
-...
+This is pretty terrible. At least we could get a movie title with gpt2-small and beam search.
 
 Okay, one more. How about geopolitics?
 
@@ -235,21 +235,43 @@ Okay, one more. How about geopolitics?
 | miniGPT / Pile10k   | Greedy              | The collapse of the Soviet Union was the baptism of the unit of the unit of the unit of the unit ...                                                                                                     |
 | miniGPT / Pile10k   | Beam                | The collapse of the Soviet Union was the corporation. “It is a Communist Party,” he said, “I don’t know that there are a lot of people who are in the United States.                                     |
 | gpt2-small          | Greedy              | The collapse of the Soviet Union was the result of a series of events that were not only the result of the collapse of the Soviet Union, but also the result of the collapse of the Soviet Union itself. |
-| gpt2-small          | Beam                |                                                                                                                                                                                                          |
+| gpt2-small          | Beam                | The collapse of the Soviet Union was the most important event in the history of human history. It was also the beginning of a new era of                                                                 |
 
+Enough.
 
+### Honorable mentions
 
-### Honorable mentions.
+Perhaps you are wondering what happened to the model trained on the german wikipedia. Well, I thought
+this would produce some really cool outputs, because it was trained on a much larger dataset than the pile.
+However, this was not the case.
+Rather, it always produces outputs like:
 
+    In der Wüste Gobi gibt es ...
+    In der Wüste Gobi gibt es beweiseen d. d“ eine einem eines einer durchs
 
+or
 
-Well, to be honest the results are a little disappointing.
-Event gpt2-small more often than not, produces rather lame answers.
-However, getting good results was never the goal in the first place. Creating a language model
+    Der afrikanische Strauß ist eine Vogelart ...
+    Der Afrikanische Strauß (Struthio camelus) ist eine Vogelart’amu.) (i) us (engl.aurei.i
+
+So, that did not really work out.
+
+## Wrap-up
+
+To be honest, the results are a little disappointing. I should have braced myself against too high expectations,
+but there is always the hope that "maybe if I do ..."
+Well, maybe if I do a little more training ...
+Anyway, getting good results was never the goal in the first place. Creating a language model
 from scratch was an incredibly insightful (and also often very frustrating) experience and I learned a ton while doing
-it. So, I guess there is nothing left to say?
+it. I think, even with a little disappointment in the end, this project was absolutely worth the time I spent in it.
+So, I guess there is nothing left to say?
 
 Model,
 
-    
+    What is left?
+
+    Model: There are a lot of things that can be done to improve the quality of life for people ...
+
+Well, let's not go there now ...
+
 
