@@ -69,8 +69,8 @@ class Embedding(nn.Module):
         """ Embed the input tokens. The input tokens are integers; we want to select for each token
             the row of the W_E matrix with that index.
 
-        :param tokens: torch.tensor(batch, position d_vocab), input tokens
-        :return: torch.tensor(batch, position d_model), embeddings
+        :param tokens: torch.tensor(batch, position, 1), input tokens
+        :return: torch.tensor(batch, position, d_model), embeddings
         """
 
         embeddings = self.W_E[tokens]
